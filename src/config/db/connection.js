@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 
-const DataBaseURL = "mongodb://localhost:27017/revitupDB";
+const DataBaseURL = process.env.MONGO_DB_URL;
 
 mongoose.connect(DataBaseURL)
     .then(() => console.log("Successfully connected to database"))
