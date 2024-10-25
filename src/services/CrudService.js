@@ -20,6 +20,10 @@ class CrudService {
     return await this.model.find(query);
   }
 
+  async findAll() {
+    return await this.model.find({});
+  }
+
   async update(query, data) {
     return await this.model.findOneAndUpdate(query, data, { new: true });
   }

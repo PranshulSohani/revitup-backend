@@ -40,7 +40,7 @@ const handleError = (error, res) => {
   }
 
   console.error(error);
-  return sendResponse(res, 500, false, "An internal server error occurred. Please try again later.");
+  return sendResponse(res, 500, false, "An internal server error occurred."+error);
 };
 
 module.exports = {

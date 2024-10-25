@@ -83,7 +83,27 @@ const loginValidation = joi.object({
   
 });
 
+
+
+const vehicleValidation = joi.object({
+  vehicle_number: joi.string()
+    .pattern(/^[A-Z]{2}\s\d{2}\s[A-Z]{2}\s\d{4}$/i) // Regex pattern for Indian vehicle number
+    .required()
+    .messages({
+      "string.empty": "Vehicle number is required.",
+      "any.required": "Vehicle number is required.",
+      "string.pattern.base": "Vehicle number must be in the format 'XX 00 XX 0000' or 'XX 00 0000 XX'."
+    }),
+  entry_for: joi.string().valid('service', 'test drive', 'delivery', 'pickup').required().messages({
+    "string.empty": "Entry for is required.",
+    "any.required": "Entry for is required.",
+    "any.only": "Entry for must be one of 'service', 'test drive', 'delivery', or 'pickup'."
+  }),
+});
+
+
 module.exports = {
   registerValidation,
-  loginValidation
+  loginValidation,
+  vehicleValidation
 };
