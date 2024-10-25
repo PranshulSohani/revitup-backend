@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
-const Registration = new mongoose.Schema({
-    fullName: {
+const User = new mongoose.Schema({
+    full_name: {
         type: String,
         required: true
     },
@@ -11,13 +11,17 @@ const Registration = new mongoose.Schema({
         unique: true,
         lowercase: true
     },
-    mobile: {
+    mobile_number: {
         type: String,
         required: true,
-        unique: true
+        unique: true,
     },
     designation: {
         type: String,
+        required: true
+    },
+    role_id: {
+        type: Number,
         required: true
     },
     password: {
@@ -35,8 +39,4 @@ const Registration = new mongoose.Schema({
     { timestamps: true }
 )
 
-
-const UserRegistration = new mongoose.model("Registration", Registration)
-
-
-module.exports = UserRegistration;
+module.exports = mongoose.model("User", User);
