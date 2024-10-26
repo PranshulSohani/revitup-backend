@@ -36,12 +36,12 @@ exports.entry = async (req, res) => {
 
 // Approve vehicle request by request ID
 exports.makeExitRequest = async (req, res) => {
-  const { vehicle_number } = req.body; // Assuming requestId is passed in the URL parameters
+  const { vehicle_log_id } = req.body; // Assuming requestId is passed in the URL parameters
 
   try {
   
     const vehicleExitRequest = {
-      vehicle_number,
+      vehicle_log_id,
     };
 
     const resp = await vehicleExitRequestService.create(vehicleExitRequest);
@@ -78,14 +78,27 @@ exports.approveVehicleExisttRequest = async (req, res) => {
     // Update the vehicle entry using CrudService with requestId
     const response = await vehicleExitRequestService.update({ _id: requestId }, vehicleEntryUpdate); // Assuming _id is the field for request ID in MongoDB
 
+
+
      // Check if the update was successful
-     if (!response) {
+     if (response) {
+      const VehicleLogUpdate = {
+        exit_time: Date.now(),
+      };
+
+      await vehicleLogService.update({ _id: response.vehicle_log_id }, VehicleLogUpdate); // Assuming _id is the field for request ID in MongoDB
+
+      return sendResponse(res, 200, true, "Request approved successfully.", response);
+
+    } else {
       return sendResponse(res, 404, false, "Vehicle exit request not found or update failed.");
+
     }
 
 
 
-    return sendResponse(res, 201, true, "Request approved successfully.", response);
+
+
   } catch (error) {
     return handleError(error, res);
   }
