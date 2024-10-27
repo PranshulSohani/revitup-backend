@@ -101,9 +101,37 @@ const vehicleValidation = joi.object({
   }),
 });
 
+const changePasswordValidation = joi.object({
+
+  current_password: joi.string().required().messages({
+    "any.only": "Confirm password must match the password.",
+    "string.empty": "Confirm password cannot be empty.",
+    "any.required": "Confirm password is required."
+  }),
+  new_password: joi.string()
+  .min(8) // Minimum length of 8 characters
+  .pattern(/[A-Z]/) // At least one uppercase letter
+  .pattern(/[a-z]/) // At least one lowercase letter
+  .pattern(/[0-9]/) // At least one number
+  .pattern(/[@$!%*?&]/) // At least one special character
+  .required()
+  .messages({
+    "string.empty": "Password cannot be empty.",
+    "string.min": "Password must be at least 8 characters long.",
+    "string.pattern.base": "Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character (e.g., @$!%*?&).",
+    "any.required": "Password is required."
+  }),
+  confirm_new_password: joi.string().valid(joi.ref('new_password')).required().messages({
+    "any.only": "Confirm password must match the password.",
+    "string.empty": "Confirm password cannot be empty.",
+    "any.required": "Confirm password is required."
+  })
+});
+
 
 module.exports = {
   registerValidation,
   loginValidation,
-  vehicleValidation
+  vehicleValidation,
+  changePasswordValidation
 };
