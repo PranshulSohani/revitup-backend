@@ -1,7 +1,7 @@
 const User = require("../../src/models/User");
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { registerValidation, loginValidation } = require('../../src/validators/validators');
+const { registerValidation, loginValidation, changePasswordValidation } = require('../../src/validators/validators');
 const { sendResponse, handleError } = require('../../src/helpers/helper');
 const CrudService = require("../../src/services/CrudService");
 
@@ -31,9 +31,9 @@ exports.register = async (req, res) => {
 
     // Save the user using CrudService
     const userResp = await userService.create(newUser);
-    sendResponse(res, 201, true, "Employee registered successfully.",userResp);
+    return sendResponse(res, 201, true, "Employee registered successfully.",userResp);
   } catch (error) {
-    handleError(error, res);
+    return handleError(error, res);
   }
 };
 
@@ -43,7 +43,7 @@ exports.login = async (req, res) => {
     // Validate request body using Joi schema
     const { error } = loginValidation.validate(req.body);
     if (error) {
-      sendResponse(res, 400, false, error.details[0].message);
+      return sendResponse(res, 400, false, error.details[0].message);
     }
 
     const { username, role_id, password } = req.body;
@@ -56,12 +56,12 @@ exports.login = async (req, res) => {
     const user = await userService.findOne(query);
 
     if (!user) {
-     sendResponse(res, 400, false, "Employee record not exist.");
+      return sendResponse(res, 400, false, "Employee record not exist.");
     }
 
     const validPassword = await bcrypt.compare(password, user.password);
     if (!validPassword) {
-      sendResponse(res, 401, false, "Employee record not exist.");
+      returnsendResponse(res, 401, false, "Employee record not exist.");
     }
 
     const tokenData = {
@@ -71,15 +71,62 @@ exports.login = async (req, res) => {
     };
 
     const token = jwt.sign(tokenData, process.env.TOKEN_SECRET, { expiresIn: "1h" });
-
+    // Store token in the database
+    await userService.update({ _id: user._id }, { token });
     // Set the token as an HTTP-only cookie
     res.cookie("token", token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production"
+      secure: true
     });
 
-    sendResponse(res, 200, true, "Login Successfully", { token });
+    return sendResponse(res, 200, true, "Login Successfully", { token });
   } catch (error) {
-    handleError(error, res);
+    return handleError(error, res);
+  }
+};
+
+
+exports.changePassword = async (req, res) => {
+  try {
+    const { new_password, current_password } = req.body;
+
+
+    // Validate request body using Joi schema
+    const { error } = changePasswordValidation.validate(req.body);
+    if (error) {
+      return sendResponse(res, 400, false, error.details[0].message);
+    }
+    const token =  req.header('Authorization').replace('Bearer ', '');
+    const query =  { token: token};
+
+    // Find the user using CrudService
+    const user = await userService.findOne(query);
+   
+   
+    const validPassword = await bcrypt.compare(current_password, user.password);
+    if (!validPassword) {
+      return sendResponse(res, 401, false, "Incorrect current password1.");
+    }
+
+    const hashPassword = await bcrypt.hash(new_password, 10);
+
+    // Update the vehicle entry using CrudService with requestId
+    const response = await userService.update({ _id: user._id }, {
+      password: hashPassword
+    }); // Assuming _id is the field for request ID in MongoDB
+
+    console.log("response",response)
+
+     // Check if the update was successful
+     if (response) {
+      return sendResponse(res, 200, true, "Password changed successfully", { token });
+
+     } else {
+      return sendResponse(res, 404, false, "User not found or update failed.");
+
+     }
+
+  } catch (error) {
+    return handleError(error, res);
   }
 };
