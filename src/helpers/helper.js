@@ -28,6 +28,7 @@ const sendResponse = (res, statusCode, success, message, data = null) => {
 const handleError = (error, res) => {
   if (error.code && error.code === 11000) {
     const duplicateField = Object.keys(error.keyValue)[0];
+    console.log("duplicateField",duplicateField)
     return sendResponse(res, 400, false, `${duplicateField} must be unique.`);
   }
 
