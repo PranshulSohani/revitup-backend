@@ -1,8 +1,9 @@
 const mongoose = require('mongoose');
 const mongoosePaginate = require("mongoose-paginate-v2");
 var aggregatePaginate = require("mongoose-aggregate-paginate-v2");
+const bcrypt = require('bcryptjs');
 
-const User = new mongoose.Schema({
+const userSchema = new mongoose.Schema({
     full_name: {
         type: String,
         required: true
@@ -10,7 +11,6 @@ const User = new mongoose.Schema({
     email: {
         type: String,
         required: true,
-        unique: true,
         lowercase: true
     },
     mobile_number: {
@@ -40,6 +40,23 @@ const User = new mongoose.Schema({
 },
     { timestamps: true }
 )
-User.plugin(mongoosePaginate);
-User.plugin(aggregatePaginate);
-module.exports = mongoose.model("User", User);
+userSchema.plugin(mongoosePaginate);
+userSchema.plugin(aggregatePaginate);
+
+// Pre-save hook to hash the password before saving to the database
+userSchema.pre('save', async function(next) {
+    // Check if the password field is modified (i.e., it's being set or updated)
+    if (this.isModified('password')) {
+      // Hash the password using bcrypt with a salt rounds of 10
+      // The password is hashed asynchronously
+      this.password = await bcrypt.hash(this.password, 10);
+    }
+    
+    // Proceed to the next middleware or save operation
+    next();
+  });
+  
+
+
+
+module.exports = mongoose.model("User", userSchema);

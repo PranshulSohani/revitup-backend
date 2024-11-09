@@ -39,12 +39,12 @@ const registerValidation = joi.object({
     "any.required": "Designation is required."
   }),
   role_id: joi.number()
-  .valid(2, 3,4,5) // Allowed values for role_id
+  .valid(2,3,4,5,6) // Allowed values for role_id
   .required()
   .messages({
     "number.base": "Role ID must be a number.",
     "any.required": "Role ID is required.",
-    "any.only": "Role ID must be one of the following:  2, 3,4,5."
+    "any.only": "Role ID must be one of the following:2,3,4,5,6."
   }),
   password: joi.string()
   .min(8) // Minimum length of 8 characters

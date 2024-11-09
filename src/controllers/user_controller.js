@@ -1,5 +1,4 @@
 const User = require("../../src/models/User");
-const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { registerValidation, loginValidation, changePasswordValidation } = require('../../src/validators/validators');
 const { sendResponse, handleError } = require('../../src/helpers/helper');
@@ -12,31 +11,40 @@ exports.register = async (req, res) => {
   const { full_name, email, mobile_number, designation, role_id, password } = req.body;
 
   try {
-    // Validate request data using Joi schema
+    // Validate request data using Joi validation
     const { error } = registerValidation.validate(req.body);
     if (error) {
       return sendResponse(res, 400, false, error.details[0].message);
     }
 
-    // Hash password
-    const hashPassword = await bcrypt.hash(password, 10);
-    const newUser = {
-      full_name,
-      email,
-      mobile_number,
-      designation,
+
+    // Check if mobile_number or email already exists for the role
+    const existingUser = await userService.findOne({
       role_id,
-      password: hashPassword
-    };
+      $or: [{ mobile_number }, { email }],
+    });
+
+    if (existingUser) {
+      return sendResponse(res,400,false,"Email or mobile number already exists for this role.");
+    }
+
 
     // Save the user using CrudService
-    const userResp = await userService.create(newUser);
-    return sendResponse(res, 201, true, "Employee registered successfully.",userResp);
+    const userResp = await userService.create(req.body);
+
+    // Check if user was created successfully
+    if (!userResp || !userResp._id) {
+      return sendResponse(res, 500, false, "Failed to register employee.");
+    }
+    
+    // Successfully created the user
+    return sendResponse(res, 201, true, "Employee registered successfully.", userResp);
   } catch (error) {
-    console.log("error",error);
+    console.log("Error:", error);
     return handleError(error, res);
   }
 };
+
 
 // Login Function
 exports.login = async (req, res) => {
@@ -62,7 +70,7 @@ exports.login = async (req, res) => {
 
     const validPassword = await bcrypt.compare(password, user.password);
     if (!validPassword) {
-      returnsendResponse(res, 401, false, "Employee record not exist.");
+      return sendResponse(res, 401, false, "Employee record not exist.");
     }
 
     const tokenData = {
@@ -196,7 +204,7 @@ exports.getWorkers = async (req, res) => {
           res.status(200).send({
             status: false,
             message: "No Workers found",
-            data:null
+            data:[]
           });
 
         }
