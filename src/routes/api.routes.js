@@ -28,7 +28,7 @@ router.put("/change-password",auth, userController.changePassword);
 // vehicle routes
 router.post("/vehicle-entry",[auth,role([6])], vehicleController.entry); 
 router.post("/make-vehicle-exit-request",[auth,role([6])], vehicleController.makeExitRequest); 
-router.post("/approve-vehicle-exist-request/:requestId",[auth,role([6])], vehicleController.approveVehicleExisttRequest); 
+router.post("/approve-vehicle-exist-request/:requestId",[auth,role([1])], vehicleController.approveVehicleExisttRequest); 
 router.get("/get-entered-vehicles",[auth,role([6])], vehicleController.getEnteredVehicles); 
 router.post("/add-vehicle-in-service-bay",auth,upload.fields([
     { name: 'seat_pic', maxCount: 1 },
