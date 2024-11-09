@@ -7,6 +7,7 @@ const roles = [
   { role_id: 3, role_name: 'Project Manager'},
   { role_id: 4, role_name: 'Worker' },
   { role_id: 5, role_name: 'CEO' },
+  { role_id: 6, role_name: 'Security Guard'},
 ];
 
 
