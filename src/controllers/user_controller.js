@@ -15,7 +15,7 @@ exports.register = async (req, res) => {
     // Validate request data using Joi schema
     const { error } = registerValidation.validate(req.body);
     if (error) {
-      sendResponse(res, 400, false, error.details[0].message);
+      return sendResponse(res, 400, false, error.details[0].message);
     }
 
     // Hash password
@@ -33,6 +33,7 @@ exports.register = async (req, res) => {
     const userResp = await userService.create(newUser);
     return sendResponse(res, 201, true, "Employee registered successfully.",userResp);
   } catch (error) {
+    console.log("error",error);
     return handleError(error, res);
   }
 };
@@ -130,3 +131,87 @@ exports.changePassword = async (req, res) => {
     return handleError(error, res);
   }
 };
+
+
+exports.getWorkers = async (req, res) => {
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+  const myCustomLabels = {
+    totalDocs: "totalDocs",
+    docs: "data",
+    limit: "limit",
+    page: "page",
+    nextPage: "nextPage",
+    prevPage: "prevPage",
+    totalPages: "totalPages",
+    pagingCounter: "slNo",
+    meta: "paginator",
+  };
+
+  const options = {
+    page: page,
+    limit: limit,
+    customLabels: myCustomLabels,
+  };
+  try {
+    var myAggregate = User.aggregate([
+      {
+        $match: {
+          role_id: 3,
+        },
+      },
+      {
+        $sort: {
+          createdAt: -1 // Sort by createdAt field in descending order (latest first)
+        }
+      },
+      {
+        $addFields: {
+          initials: {
+            $concat: [
+              { $toUpper: { $substr: ["$full_name", 0, 1] } },
+              { $toUpper: { $substr: [{ $arrayElemAt: [{ $split: ["$full_name", " "] }, -1] }, 0, 1] } }
+            ]
+          }
+        }
+      }
+    ]);
+    await User.aggregatePaginate(myAggregate, options)
+      .then((result) => {
+        if (result) {      
+          result.data = result.data.map(worker => {
+              return {
+                ...worker,
+                initials: worker.initials,
+              };
+                        
+             }); 
+
+            res.status(200).send({
+              status: true,
+              message: "success",
+              data: result,
+            });
+        } else {
+          res.status(200).send({
+            status: false,
+            message: "No Workers found",
+            data:null
+          });
+
+        }
+      })
+      .catch((error) => {
+        res.send({
+          status: false,
+          message: error.toString() ?? "Error",
+        });
+      });
+  } catch (error) {
+    res.status(500).send({
+      status: false,
+      message: error.toString() ?? "Internal Server Error",
+    });
+  }
+};
+

@@ -4,7 +4,7 @@ const port = process.env.PORT || 3000;
 const app = express();
 const cors = require("cors");
 const http = require("http");
-
+const path = require('path');
 require('dotenv').config({ path: ".env" });
 require("../src/config/db/connection");
 
@@ -16,7 +16,10 @@ Server.timeout = 10000;
 
 app.use(cors({ origin: '*' }))
 app.use(express.json());
-app.use("/api/v1", require("../src/routes/api.routes"));
+app.use("/api", require("../src/routes/api.routes"));
+console.log("__dirname",__dirname);
+console.log("__dirname 2",path.join(__dirname, '/uploads'));
+app.use('/uploads', express.static(path.join(__dirname, '/uploads')));
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static("public"));

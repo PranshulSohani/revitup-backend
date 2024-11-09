@@ -3,9 +3,10 @@ const Role = require('../../src/models/Role');
 
 const roles = [
   { role_id: 1, role_name: 'Admin' },
-  { role_id: 2, role_name: 'Manager' },
-  { role_id: 3, role_name: 'Worker' },
-  { role_id: 4, role_name: 'CEO' },
+  { role_id: 2, role_name: 'Bay Manager'},
+  { role_id: 3, role_name: 'Project Manager'},
+  { role_id: 4, role_name: 'Worker' },
+  { role_id: 5, role_name: 'CEO' },
 ];
 
 
