@@ -5,8 +5,12 @@ const role = require("../middleware/role");
 
 const multer = require('multer');
 const path = require('path');
+
+// Import the controllers
 const userController = require("../controllers/user_controller");
 const vehicleController = require("../controllers/vehicle_controller");
+const categoryController = require("../controllers/category_controller");
+
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
       cb(null, 'src/uploads');
@@ -23,7 +27,9 @@ const storage = multer.diskStorage({
 router.post("/register", userController.register);
 router.post("/login", userController.login);
 router.get("/get-workers",[auth,role([5])], userController.getWorkers);
+router.get("/get-user-detail/:userId",[auth], userController.getUserDetail);
 router.put("/change-password",auth, userController.changePassword);
+router.get("/get-employee-attendance-list",[auth], userController.getEmployeeAttendanceList);
 
 // vehicle routes
 router.post("/vehicle-entry",[auth,role([6])], vehicleController.entry); 
@@ -40,5 +46,17 @@ router.post("/add-vehicle-in-service-bay",auth,upload.fields([
   ]),vehicleController.addVehicleInServiceBay);
 router.get("/get-bay-vehicles",[auth,role([5])], vehicleController.getBayVehicles); 
 router.post("/assign-worker-in-bay",[auth,role([5])], vehicleController.assignWorkerInBay);
+
+
+// Create a new category
+router.post("/create-category", [auth, role([8])], categoryController.create);
+// Get all categories with pagination
+router.get("/get-all-categories", [auth, role([8])], categoryController.getAll);
+// Get category by ID
+router.get("/get-category-detail/:categoryId", [auth, role([8])], categoryController.get);
+// Update category by ID
+router.put("/update-category/:categoryId", [auth, role([8])], categoryController.update);
+// Delete category by ID
+router.delete("/delete-category/:categoryId", [auth, role([8])], categoryController.delete);
 
 module.exports = router;

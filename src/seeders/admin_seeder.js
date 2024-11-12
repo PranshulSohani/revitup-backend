@@ -3,10 +3,10 @@ const User = require("../../src/models/User");
 const Role = require('../../src/models/Role');
 const bcrypt = require('bcrypt');
 
-const seedAdminUser = async () => {
+const createAdminUser = async () => {
   try {
 
-    await mongoose.connect('mongodb://localhost:27017');
+    await mongoose.connect("mongodb://localhost:27017");
 
     // Check for existing admin user
     const existingAdmin = await User.findOne({ role_id : 1 });
@@ -21,8 +21,6 @@ const seedAdminUser = async () => {
        console.error('Admin role not found. Cannot create admin user.');
        return;
      }
-    // Hash password
-    const hashPassword = await bcrypt.hash('Admin@123', 10); 
 
     // Create new admin user  
 
@@ -32,18 +30,18 @@ const seedAdminUser = async () => {
         mobile_number : "+918785478595",
         designation : "Super Admin",
         role_id : 1,
-        password: hashPassword
+        password: 'Admin@123'
       });
 
     await adminUser.save();
 
-    console.log('Admin user seeded successfully.');
+    console.log('Admin user created successfully.');
 
   } catch (error) {
-    console.error('Error seeding admin user:', error);
+    console.error('Error creating admin user:', error);
   } finally {
     await mongoose.disconnect();
   }
 };
 
-seedAdminUser();
+createAdminUser();

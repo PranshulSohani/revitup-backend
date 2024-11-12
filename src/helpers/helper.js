@@ -1,4 +1,5 @@
 // src/helpers/helper.js
+const moment = require("moment-timezone");
 
 /**
  * Standardizes the API response format.
@@ -44,7 +45,29 @@ const handleError = (error, res) => {
   return sendResponse(res, 500, false, "An internal server error occurred."+error);
 };
 
+
+/**
+ * Formats a date to the IST timezone in the format 'dd Mon yyyy HH:mm:ss'.
+ * 
+ * @param {Date|String} date - The date to be formatted.
+ * @returns {String} - The formatted date in 'dd Mon yyyy HH:mm:ss' format.
+ */
+const formatToIST = (date) => {
+  return moment(date).tz("Asia/Kolkata").format("DD MMM YYYY HH:mm:ss");
+};
+
+
+function getNameInitials(fullName, key) {
+  return fullName
+    ? key === "first_name"
+      ? fullName.split(' ')[0][0].toUpperCase() // Initial of first name
+      : fullName.split(' ').map(word => word[0].toUpperCase()).join('') // Initials of full name
+    : '';
+}
+
 module.exports = {
   sendResponse,
   handleError,
+  formatToIST,
+  getNameInitials
 };

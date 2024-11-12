@@ -8,13 +8,16 @@ const roles = [
   { role_id: 4, role_name: 'Worker' },
   { role_id: 5, role_name: 'CEO' },
   { role_id: 6, role_name: 'Security Guard'},
+  { role_id: 7, role_name: 'Service Manager'},
+  { role_id: 8, role_name: 'Inventory Manager'},
+
 ];
 
 
 const seedRoles = async () => {
   try {
 
-      await mongoose.connect('mongodb://localhost:27017');
+      await mongoose.connect("mongodb://localhost:27017");
 
       // Clear existing roles
       await Role.deleteMany({});
