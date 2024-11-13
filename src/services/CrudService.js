@@ -24,8 +24,10 @@ class CrudService {
     return await this.model.find({});
   }
 
-  async update(query, data) {
-    return await this.model.findOneAndUpdate(query, data, { new: true });
+  async update(query, data, options = {}) {
+    // Make sure options include 'new: true' for the updated document
+    options.new = true;  // This ensures we get the updated document in the response
+    return await this.model.findOneAndUpdate(query, data, options);
   }
 
   async delete(query) {

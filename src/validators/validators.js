@@ -135,10 +135,19 @@ const categoryValidation = joi.object({
   })
 });
 
+
+const productValidation = joi.object({
+  name: joi.string().required().messages({
+    "string.empty": "Confirm password cannot be empty.",
+    "any.required": "Confirm password is required."
+  })
+});
+
 module.exports = {
   registerValidation,
   loginValidation,
   vehicleValidation,
   changePasswordValidation,
-  categoryValidation
+  categoryValidation,
+  productValidation
 };
