@@ -137,10 +137,12 @@ const categoryValidation = joi.object({
 
 
 const productValidation = joi.object({
-  name: joi.string().required().messages({
-    "string.empty": "Confirm password cannot be empty.",
-    "any.required": "Confirm password is required."
-  })
+  name: joi.string().required(),
+  category_id: joi.string().required(),
+  stock: joi.number().required(),
+  price: joi.number().required(),
+  incoming: joi.number().optional(),
+  outgoing: joi.number().optional(),
 });
 
 module.exports = {

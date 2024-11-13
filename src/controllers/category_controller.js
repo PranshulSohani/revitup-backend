@@ -87,6 +87,8 @@ exports.delete = async (req, res) => {
   try {
     const response = await categoryService.delete({ _id: categoryId });
     if (response) {
+      // Delete all products with the deleted category ID
+      await Product.deleteMany({ category_id: categoryId });
       return sendResponse(res, 200, true, "Category deleted successfully");
     } else {
       return sendResponse(res, 404, false, "Category not found or deletion failed.");

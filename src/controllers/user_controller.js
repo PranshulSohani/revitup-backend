@@ -85,13 +85,28 @@ exports.getEmployeeAttendanceList = async (req, res) => {
   const date = req.query.date ? new Date(req.query.date) : null;
   const searchKey = req.query.search_key || '';
 
+  const myCustomLabels = {
+    totalDocs: "totalDocs",
+    docs: "data",
+    limit: "limit",
+    page: "page",
+    nextPage: "nextPage",
+    prevPage: "prevPage",
+    totalPages: "totalPages",
+    pagingCounter: "slNo",
+    meta: "paginator",
+  };
+  const options = { page, limit, customLabels: myCustomLabels };
+
   try {
-    const matchConditions = date ? {
-      createdAt: {
-        $gte: moment(date).startOf("day").toDate(),
-        $lt: moment(date).endOf("day").toDate()
-      }
-    } : {};
+    const matchConditions = date
+      ? {
+          createdAt: {
+            $gte: moment(date).startOf("day").toDate(),
+            $lt: moment(date).endOf("day").toDate()
+          }
+        }
+      : {};
 
     const myAggregate = EmployeeAttendance.aggregate([
       { $match: matchConditions },
@@ -108,17 +123,26 @@ exports.getEmployeeAttendanceList = async (req, res) => {
         $project: {
           initials: 1,
           check_in_date_time: 1,
-          _id: 0,
+          check_out_date_time: 1,
           employee_details: 1,
         },
       },
       { $sort: { check_in_date_time: -1 } },
       {
         $group: {
-          _id: { date: { $dateToString: { format: "%Y-%m-%d", date: "$check_in_date_time" } } },
+          _id: { $dateToString: { format: "%Y-%m-%d", date: "$check_in_date_time" } },
           check_in_date_time: { $first: "$check_in_date_time" },
           check_out_date_time: { $first: "$check_out_date_time" },
           employee_details: { $first: "$employee_details" },
+        },
+      },
+      {
+        $project: {
+          _id: 0, // Remove _id from the final output
+          date: "$_id", // Rename _id to date
+          check_in_date_time: 1,
+          check_out_date_time: 1,
+          employee_details: 1,
         },
       },
     ]);
@@ -131,11 +155,12 @@ exports.getEmployeeAttendanceList = async (req, res) => {
             return fullName.toLowerCase().includes(searchKey.toLowerCase());
           });
         }
+        console.log("result.data",result.data);
 
         result.data = result.data.map(attendance => ({
           ...attendance,
           name_initial: getNameInitials(attendance.employee_details.full_name, 'first_name'),
-          attendance_date: moment(attendance.check_in_date_time).format("DD MMM YYYY"),
+          date: moment(attendance.date).format("DD MMM YYYY"),
           check_in_time: moment(attendance.check_in_date_time).format("hh:mm A"),
           check_out_time: attendance.check_out_date_time
             ? moment(attendance.check_out_date_time).format("HH:mm A")
@@ -149,9 +174,11 @@ exports.getEmployeeAttendanceList = async (req, res) => {
       }
     });
   } catch (error) {
+    console.log("error", error);
     res.status(500).send({ status: false, message: error.toString() || "Internal Server Error" });
   }
 };
+
 
 exports.assignInBay = async (req, res) => {
   try {

@@ -33,12 +33,39 @@ exports.getAll = async (req, res) => {
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 10;
   const searchKey = req.query.search_key || '';
+  const sort = { createdAt: -1 }; // Sort by "createdAt" in descending order
 
   try {
-    const search = { name: { $regex: searchKey, $options: 'i' } }; // Case-insensitive search on the "name" field
-    const sort = { createdAt: -1 }; // Sort by "createdAt" in descending order
 
-    const result = await PaginationService.paginate(Product, [], page, limit, search, sort);
+       // Add the $lookup stage to join with the Category model
+       const pipeline = [
+        {
+          $lookup: {
+            from: 'categories', // name of the Category collection
+            localField: 'category_id', // field in Product schema
+            foreignField: '_id', // field in Category schema
+            as: 'category_details', // output field name for category details
+          },
+        },
+        {
+          $unwind: {
+            path: '$category_details', // Field to unwind
+          },
+        },        {
+          $project: {
+            name: 1,
+            stock: 1,
+            price: 1,
+            incoming: 1,
+            outgoing: 1,
+            createdAt: 1,
+            updatedAt: 1,
+            category_details: { $ifNull: ['$category_details', null] }, // Set to null if no category match
+          },
+        },
+      ];
+
+    const result = await PaginationService.paginate(Product,pipeline, page, limit, searchKey, sort);
 
     if (result) {
       return sendResponse(res, 200, true, "Data found", result);
