@@ -10,7 +10,7 @@ const productRoutes = require('./productRoutes');
 
 // Mounting the routes
 router.use('/auth', authRoutes);
-router.use('/users', userRoutes);
+router.use('/employees', userRoutes);
 router.use('/vehicles', vehicleRoutes);
 router.use('/categories', categoryRoutes);
 router.use('/products', productRoutes);
