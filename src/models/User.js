@@ -24,8 +24,11 @@ const userSchema = new mongoose.Schema({
     },
     role_id: {
         type: Number,
-        required: true
+        required: true,
+        ref: 'Role',
     },
+    department_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Department', required: true },
+
     password: {
         type: String,
         required: true

@@ -63,7 +63,11 @@ const registerValidation = joi.object({
     "any.only": "Confirm password must match the password.",
     "string.empty": "Confirm password cannot be empty.",
     "any.required": "Confirm password is required."
-  })
+  }),
+  department_id: joi.string().required().messages({
+    "string.empty": "Department id is required.",
+    "any.required": "Department id is required."
+  }),
 });
 
 const loginValidation = joi.object({
