@@ -32,13 +32,17 @@ exports.create = async (req, res) => {
 exports.getAll = async (req, res) => {
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 10;
+  const searchKey = req.query.search_key || '';
 
   try {
-    const aggregateQuery = Category.aggregate([{ $sort: { createdAt: -1 } }]); // Sort categories by creation date
-    const result = await PaginationService.paginate(Category, aggregateQuery, page, limit);
+    const search = { name: { $regex: searchKey, $options: 'i' } }; // Case-insensitive search on the "name" field
+    const sort = { createdAt: -1 }; // Sort by "createdAt" in descending order
+    
+    const result = await PaginationService.paginate(Category, [], page, limit, search, sort);
+    
 
     if (result) {
-      return sendResponse(res, 200, true, "Success", result);
+      return sendResponse(res, 200, true, "Data found", result);
     } else {
       return sendResponse(res, 200, false, "No categories found", []);
     }

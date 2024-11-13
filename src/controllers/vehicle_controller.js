@@ -1,13 +1,11 @@
 const VehicleLog = require("../../src/models/VehicleLog");
 const VehicleExitRequest = require("../../src/models/VehicleExitRequest");
-const BaysWorker = require("../../src/models/BaysWorker");
 const { vehicleValidation } = require('../../src/validators/validators');
 const { sendResponse, handleError } = require('../../src/helpers/helper');
 const CrudService = require("../../src/services/CrudService");
 const vehicleLogService = new CrudService(VehicleLog);
 const vehicleExitRequestService = new CrudService(VehicleExitRequest);
 const vehicleMaintenceLog = require("../../src/models/VehicleMaintenceLog");
-const bayService = new CrudService(BaysWorker);
 
 
 // Register Function for Vehicle Entry
@@ -269,31 +267,4 @@ exports.getBayVehicles = async (req, res) => {
   }
 };
 
-exports.assignWorkerInBay = async (req, res) => {
-  try {
-    const { worker_id, bay_id } = req.body;
 
-    console.log("body",req.body);
-
-    var checkExitenceofWorkerInBay = await bayService.findOne({ worker_id, bay_id });
-    if(checkExitenceofWorkerInBay){
-      return sendResponse(res, 200, false, "Worker already assgined");
-    } else {
-      const response = await bayService.create(req.body);
-
-   
-    console.log("response",response)
-     if (response) {
-      return sendResponse(res, 200, true, "Worker assgined successfully",response);
-
-     } else {
-      return sendResponse(res, 404, false, "User not found or update failed.");
-
-     }
-    }
-    
-
-  } catch (error) {
-    return handleError(error, res);
-  }
-};
