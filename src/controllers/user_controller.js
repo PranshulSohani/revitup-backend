@@ -44,7 +44,7 @@ exports.getUsers = async (req, res) => {
         }));
         res.status(200).send({ status: true, message: "success", data: result });
       } else {
-        res.status(200).send({ status: false, message: "No Workers found", data: [] });
+        res.status(200).send({ status: false, message: "No data found", data: [] });
       }
     }).catch(error => res.send({ status: false, message: error.toString() || "Error" }));
   } catch (error) {
@@ -68,7 +68,7 @@ exports.getUserDetail = async (req, res) => {
 
     console.log("Name Initials:", initials);
 
-    return sendResponse(res, 200, true, "User data found", {
+    return sendResponse(res, 200, true, "Data found", {
       ...user.toObject(),  // if using Mongoose model, convert to plain object
       name_initial: user.name_initial
     });
@@ -168,7 +168,7 @@ exports.getEmployeeAttendanceList = async (req, res) => {
           status: 'Present',
         }));
 
-        res.status(200).send({ status: true, message: "Success", data: result });
+        res.status(200).send({ status: true, message: "Data found", data: result });
       } else {
         res.status(200).send({ status: false, message: "No attendance records found", data: [] });
       }
