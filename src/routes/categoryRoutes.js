@@ -8,7 +8,7 @@ const role = require('../middleware/role');
 // RESTful routes for Category resource
 
 // POST /categories - Create a new category
-router.post("/", [auth, role([8])], categoryController.create);
+router.post("/create", [auth, role([8])], categoryController.create);
 
 // GET /categories - Get all categories
 router.get("/", [auth, role([8])], categoryController.getAll);
