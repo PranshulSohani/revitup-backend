@@ -17,7 +17,7 @@ class CrudService {
   }
 
   async find(query) {
-    return await this.model.find(query);
+    return await this.model.find(query).sort({ _id: -1 });
   }
 
   async findAll() {

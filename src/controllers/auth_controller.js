@@ -11,7 +11,7 @@ const attendanceService = new CrudService(EmployeeAttendance);
 
 // Register Function
 exports.register = async (req, res) => {
-  const { full_name, email, mobile_number, designation, role_id, password } = req.body;
+  const { full_name, email, mobile_number, designation, role_id, password,department_id } = req.body;
 
   try {
     const { error } = registerValidation.validate(req.body);
