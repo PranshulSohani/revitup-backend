@@ -16,14 +16,8 @@ const auth = async (req, res, next) => {
   try {
     const decoded = jwt.verify(token, process.env.TOKEN_SECRET);
     const userId = new mongoose.Types.ObjectId(decoded.id);  // Convert decoded.id to ObjectId
-    console.log("userId",userId);
     // Verify that the token matches the one stored in the database
-    const user = await userService.findOne({
-      _id:  userId,
-      token
-    });
-  
-    console.log("token",token);
+    const user = await userService.findOne({_id:  userId,token});
 
     if (!user) {
       return sendResponse(res, 401, false, "Unauthorized: Invalid token");
@@ -31,9 +25,7 @@ const auth = async (req, res, next) => {
 
     // Attach user info to request
     req.user = user;
-    console.log("yha",user)
     next();
-    console.log("yha 1")
   } catch (error) {
     console.log("error",error);
     const errorMessage = process.env.NODE_ENV === 'development' ? error.message : "Internal Server Error";

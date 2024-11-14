@@ -7,9 +7,37 @@ const moment = require('moment');
 const userService = new CrudService(User);
 const attendanceService = new CrudService(EmployeeAttendance);
 const bayService = new CrudService(BaysWorker);
+const { createEmployeeValidation,updateEmployeeValidation } = require('../../src/validators/validators');
 
-// Get Workers Function
-exports.getUsers = async (req, res) => {
+
+// creae new user
+exports.create = async (req, res) => {
+  const { full_name, email, mobile_number, designation, role_id, password,department_id,employment_type,joining_date } = req.body;
+
+  try {
+    const { error } = createEmployeeValidation.validate(req.body);
+    if (error) return sendResponse(res, 400, false, error.details[0].message);
+
+    const existingUser = await userService.findOne({
+      role_id,
+      $or: [{ mobile_number }, { email }],
+    });
+
+    if (existingUser) return sendResponse(res, 400, false, "Email or mobile number already exists for this role.");
+
+    const userResp = await userService.create(req.body);
+
+    if (!userResp || !userResp._id) return sendResponse(res, 500, false, "Failed to create employee.");
+
+    return sendResponse(res, 201, true, "Employee created successfully.", userResp);
+  } catch (error) {
+    return handleError(error, res);
+  }
+};
+
+
+// Get all Users based on role if provided / 
+exports.getAll = async (req, res) => {
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 10;
   const roleId = req.query.role_id;
@@ -28,15 +56,32 @@ exports.getUsers = async (req, res) => {
   const options = { page, limit, customLabels: myCustomLabels };
 
   try {
-    console.log("roleId",roleId)
-
     var myAggregate = User.aggregate([
-      { $match: { role_id: Number(roleId) } },
-      { $sort: { createdAt: -1 } }
+      {
+        $match: {
+          role_id: { $ne: 1 },
+          ...(roleId ? { role_id: Number(roleId) } : {}) // Ensure you have the ternary complete with : {}
+        }
+      },
+      { $sort: { createdAt: -1 } },
+      {
+        $lookup: {
+          from: 'departments', // name of the department collection
+          localField: 'department_id', // field in department schema
+          foreignField: '_id', // field in User schema
+          as: 'department_details', // output field name for category details
+        },
+      },
+      {
+        $unwind: {
+          path: '$department_details', // unwind the department_details array into an object
+          preserveNullAndEmptyArrays: true // keeps the user document even if no department is found
+        }
+      }
     ]);
+    
 
     await User.aggregatePaginate(myAggregate, options).then((result) => {
-      console.log("result",result)
       if (result) {
         result.data = result.data.map(worker => ({
           ...worker,
@@ -53,7 +98,7 @@ exports.getUsers = async (req, res) => {
 };
 
 // Get User Detail Function
-exports.getUserDetail = async (req, res) => {
+exports.get = async (req, res) => {
   try {
     const { userId } = req.params;
     const user = await userService.findOne({ _id: userId });
@@ -77,6 +122,56 @@ exports.getUserDetail = async (req, res) => {
     return handleError(error, res);
   }
 };
+
+
+// Update a user by ID
+exports.update = async (req, res) => {
+  const { full_name, email, mobile_number, designation, role_id, password,department_id,employment_type,joining_date } = req.body;
+  const { userId } = req.params;
+
+  try {
+
+    const { error } = updateEmployeeValidation.validate(req.body);
+    console.log("error",error)
+    if (error) return sendResponse(res, 400, false, error.details[0].message);
+
+    const existingUser = await userService.findOne({
+      role_id,
+      $or: [{ mobile_number }, { email }],
+      _id: { $ne: userId }, // Exclude the current user ID
+    });
+
+    if (existingUser) return sendResponse(res, 400, false, "Email or mobile number already exists for this role.");
+
+
+
+    const response = await userService.update({ _id: userId },req.body);
+    if (response) {
+      return sendResponse(res, 200, true, "Employee updated successfully", response);
+    } else {
+      return sendResponse(res, 404, false, "Employee not found or update failed.");
+    }
+  } catch (error) {
+    console.log("error",error)
+    return handleError(error, res);
+  }
+};
+
+// Delete a user by ID
+exports.delete = async (req, res) => {
+  const { userId } = req.params;
+  try {
+    const response = await userService.delete({ _id: userId });
+    if (response) {
+      return sendResponse(res, 200, true, "Employee deleted successfully");
+    } else {
+      return sendResponse(res, 404, false, "Employee not found or deletion failed.");
+    }
+  } catch (error) {
+    return handleError(error, res);
+  }
+};
+
 
 // Get Employee Attendance List Function
 exports.getEmployeeAttendanceList = async (req, res) => {

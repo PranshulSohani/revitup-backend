@@ -1,11 +1,6 @@
-const joi = require('joi');
+const joi = require('joi').extend(require("@joi/date"));
 const User = require("../../src/models/User");
 
-// Async function to check if the full name is unique
-const isUniqueField = async (key,value) => {
-    const user = await User.findOne({ key: value });
-    return !user; // Return true if no user is found, meaning the name is unique
-};
 
 const registerValidation = joi.object({
   full_name: joi.string().pattern(/^[A-Za-z]+(?:\s[A-Za-z]+)*$/) 
@@ -24,16 +19,7 @@ const registerValidation = joi.object({
     "string.empty": "Mobile number is required.",
     "string.pattern.base": "Mobile number must start with '+91' and be followed by 10 digits.",
     "any.required": "Mobile number is required."
-  })
-  .custom(async (value, helpers) => {
-    const isUnique = await isUniqueField('mobile_number', value);
-    if (!isUnique) {
-      return helpers.message("Mobile number must be unique.");
-    }
-    return value; // return the value if it is valid
-  })
-  
-  ,
+  }),
   designation: joi.string().required().messages({
     "string.empty": "Designation is required.",
     "any.required": "Designation is required."
@@ -75,9 +61,12 @@ const loginValidation = joi.object({
     "string.empty": "Username is required.",
     "any.required": "Username is required."
   }),
-  role_id: joi.number().required().messages({
+  role_id: joi.number()
+  .valid(2,3,4,5,6,7,8) // Allowed values for role_id
+  .required().messages({
     "number.empty": "Role ID is required.",
-    "any.required": "Role ID is required."
+    "any.required": "Role ID is required.",
+    "any.only": "Role ID must be one of the following:2,3,4,5,6,7,8."
   }),
   password: joi.string().min(8).required().messages({
     "string.empty": "Password is required.",
@@ -149,11 +138,111 @@ const productValidation = joi.object({
   outgoing: joi.number().optional(),
 });
 
+const baseEmployeeValidation = joi.object({
+  full_name: joi.string().pattern(/^[A-Za-z]+(?:\s[A-Za-z]+)*$/) 
+  // Allows names like "John Doe" or "Jane Mary Doe"
+  .required().messages({
+    "string.empty": "Full name is required.",
+    "any.required": "Full name is required.",
+    "string.pattern.base": "Full name must contain only letters and can include spaces between first, middle, and last name.",
+  }),
+  email: joi.string().email().required().messages({
+    "string.empty": "Email is required.",
+    "string.email": "Please enter a valid email address.",
+    "any.required": "Email is required."
+  }),
+  mobile_number: joi.string().pattern(/^\+91[0-9]{10}$/).required().messages({
+    "string.empty": "Mobile number is required.",
+    "string.pattern.base": "Mobile number must start with '+91' and be followed by 10 digits.",
+    "any.required": "Mobile number is required."
+  }),
+  designation: joi.string().required().messages({
+    "string.empty": "Designation is required.",
+    "any.required": "Designation is required."
+  }),
+  role_id: joi.number()
+  .valid(2,3,4,5,6,7,8) // Allowed values for role_id
+  .required()
+  .messages({
+    "number.base": "Role ID must be a number.",
+    "any.required": "Role ID is required.",
+    "any.only": "Role ID must be one of the following:2,3,4,5,6,7,8."
+  }),
+  password: joi.string()
+  .min(8) // Minimum length of 8 characters
+  .pattern(/[A-Z]/) // At least one uppercase letter
+  .pattern(/[a-z]/) // At least one lowercase letter
+  .pattern(/[0-9]/) // At least one number
+  .pattern(/[@$!%*?&]/) // At least one special character
+  .required()
+  .messages({
+    "string.empty": "Password cannot be empty.",
+    "string.min": "Password must be at least 8 characters long.",
+    "string.pattern.base": "Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character (e.g., @$!%*?&).",
+    "any.required": "Password is required."
+  }),
+  confirm_password: joi.string().valid(joi.ref('password')).required().messages({
+    "any.only": "Confirm password must match the password.",
+    "string.empty": "Confirm password cannot be empty.",
+    "any.required": "Confirm password is required."
+  }),
+  department_id: joi.string().required().messages({
+    "string.empty": "Department id is required.",
+    "any.required": "Department id is required."
+  }),
+  employment_type: joi.string()
+  .valid("Full time", "Part time")  // Specify allowed string values
+  .optional()
+  .messages({
+    "any.only": "Employment type must be either 'Full time' or 'Part time'.",
+    "string.base": "Employment type must be a text value."
+  }),
+  joining_date: joi.date()
+  .format("YYYY-MM-DD")
+  .optional()
+  .messages({
+    "date.base": "Joining date must be a valid date.",
+    "date.format": "Joining date must be in YYYY-MM-DD format."
+  })
+  .custom( (value, helpers) => {
+    if (value !== '') {
+      const d = new Date(value);
+      const todayDate = new Date().toISOString().split('T')[0]; // Today's date in YYYY-MM-DD format
+      const joiningDate = d.toISOString().split('T')[0]; // Convert joining date to YYYY-MM-DD format
+
+      // Log for debugging
+      console.log("todayDate:", todayDate);
+      console.log("joiningDate:", joiningDate);
+
+      if (joiningDate > todayDate) {
+        console.log("Joining date is in the future.");
+        return helpers.message("Joining date should not be a future date.");
+      }
+    }
+    return value; // Return value if valid
+  })
+
+});
+
+// Create schema (requires all fields)
+const createEmployeeValidation = baseEmployeeValidation;
+
+// Update schema (some fields optional)
+const updateEmployeeValidation = baseEmployeeValidation.fork(
+  [
+    "password",
+    "confirm_password"
+  ],
+  (schema) => schema.optional()
+);
+
 module.exports = {
   registerValidation,
   loginValidation,
   vehicleValidation,
   changePasswordValidation,
   categoryValidation,
-  productValidation
+  productValidation,
+  createEmployeeValidation,
+  updateEmployeeValidation 
 };

@@ -42,7 +42,7 @@ router.post("/service-bay", auth, upload.fields([
 ]), vehicleController.addVehicleInServiceBay);
 
 // GET /vehicles/bay - Get all vehicles in service bay
-router.get("/bay", [auth, role([5])], vehicleController.getBayVehicles);
+router.get("/bay", [auth, role([2])], vehicleController.getBayVehicles);
 
 
 

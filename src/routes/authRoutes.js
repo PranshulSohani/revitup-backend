@@ -15,4 +15,7 @@ router.post("/login", authController.login);
 // PUT /auth/change-password - Change password for an authenticated user
 router.put("/change-password", auth, authController.changePassword);
 
+// POST /auth/logout - logout a user
+router.post("/logout",auth, authController.logout);
+
 module.exports = router;
