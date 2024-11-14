@@ -49,7 +49,16 @@ exports.login = async (req, res) => {
 
     const validPassword = await bcrypt.compare(password, user.password);
     if (!validPassword) return sendResponse(res, 401, false, "Employee record not exist.");
-      // add employee check in data
+    
+    // Track user as available upon successful login
+    const updateData = { availablity_status: 'available' }; // Update status to available
+    await userService.update({ _id: user._id }, updateData);
+    
+    
+
+
+    
+    // add employee check in data
 
       var attendanceData = {
         'check_in_date_time' : new Date(),
@@ -61,7 +70,7 @@ exports.login = async (req, res) => {
 
      // Check if user was created successfully
      if (!attendanceResp || !attendanceResp._id) {
-       return sendResponse(res, 500, false, "Failed to creae attendance.");
+       return sendResponse(res, 500, false, "Failed to create attendance.");
      }
 
     const tokenData = { id: user._id, email: user.email, full_name: user.full_name };
@@ -95,6 +104,71 @@ exports.changePassword = async (req, res) => {
 
     if (response) return sendResponse(res, 200, true, "Password changed successfully", { token });
     else return sendResponse(res, 404, false, "User not found or update failed.");
+  } catch (error) {
+    return handleError(error, res);
+  }
+};
+
+
+// Logout Function
+exports.logout = async (req, res) => {
+  try {
+    // Get user ID from the token (assuming the token is passed via the Authorization header)
+    const token = req.header('Authorization').replace('Bearer ', ''); // Extract the token from the Authorization header
+    const decoded = jwt.verify(token, process.env.TOKEN_SECRET); // Verify the token
+    
+    console.log("decoded",decoded)
+    // Find the most recent attendance record for the employee (assuming each user only has one active attendance record at a time)
+  
+
+    console.log("Query for attendance:", {
+      employee_id: decoded.id,
+      $or: [
+        { check_out_date_time: { $exists: false } },
+        { check_out_date_time: null }
+      ]
+    });
+    
+    const attendance = await attendanceService.findOne({
+      employee_id: decoded.id,
+      $or: [
+        { check_out_date_time: { $exists: false } },
+        { check_out_date_time: null }
+      ]
+    });
+    
+    console.log("Attendance found:", attendance);
+    
+
+
+    if (!attendance) {
+      return sendResponse(res, 400, false, "No attendance record found.");
+    }
+
+
+    // Update the attendance record with the check-out time
+    const attendanceData = {
+      check_out_date_time: new Date(), // Mark the check-out time
+    };
+
+    // Save the updated attendance record using CrudService
+    const updatedAttendance = await attendanceService.update({ _id: attendance._id }, attendanceData);
+
+    // Check if attendance was successfully updated
+    if (!updatedAttendance) {
+      return sendResponse(res, 500, false, "Failed to update attendance.");
+    }
+
+
+    // Find the user by decoded id
+    const user = await userService.findOne({ _id: decoded.id });
+    if (!user) return sendResponse(res, 400, false, "User not found.");
+
+    // Update the user to remove the token and mark them as unavailable
+    const updateData = { token: null, availablity_status: 'unavailable' }; 
+    await userService.update({ _id: user._id }, updateData);
+
+    return sendResponse(res, 200, true, "Logged out successfully.");
   } catch (error) {
     return handleError(error, res);
   }

@@ -14,6 +14,7 @@ const attendanceSchema = new mongoose.Schema({
     },
     check_out_date_time: {
         type: Date, // corrected data type
+        default: null
     }
 },
     { timestamps: true }

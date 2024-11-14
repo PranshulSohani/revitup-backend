@@ -39,7 +39,17 @@ const userSchema = new mongoose.Schema({
     token: {
         type: String,
         default: ''
-    }
+    },
+    employment_type: {
+        type: String,
+    },
+    joining_date: {
+        type: Date,
+    },
+    availablity_status: {
+        type: String,
+        default: 'unavailable'
+    },
 },
     { timestamps: true }
 )
