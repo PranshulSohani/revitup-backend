@@ -17,7 +17,7 @@ const auth = async (req, res, next) => {
     const decoded = jwt.verify(token, process.env.TOKEN_SECRET);
     const userId = new mongoose.Types.ObjectId(decoded.id);  // Convert decoded.id to ObjectId
     // Verify that the token matches the one stored in the database
-    const user = await userService.findOne({_id:  userId,token});
+    const user = await userService.findOne({_id:userId,token, isTokenActive: true});
 
     if (!user) {
       return sendResponse(res, 401, false, "Unauthorized: Invalid token");

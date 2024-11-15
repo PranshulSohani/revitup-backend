@@ -1,11 +1,31 @@
+// Importing models
 const VehicleLog = require("../../src/models/VehicleLog");
 const VehicleExitRequest = require("../../src/models/VehicleExitRequest");
-const { vehicleValidation } = require('../../src/validators/validators');
-const { sendResponse, handleError } = require('../../src/helpers/helper');
-const CrudService = require("../../src/services/CrudService");
-const vehicleLogService = new CrudService(VehicleLog);
-const vehicleExitRequestService = new CrudService(VehicleExitRequest);
 const vehicleMaintenceLog = require("../../src/models/VehicleMaintenceLog");
+const jobCardQuotation = require("../../src/models/JobCardQuotation");
+const Product = require("../../src/models/Product");
+
+// Importing validation functions
+const { vehicleValidation } = require('../../src/validators/validators');
+
+// Importing helper functions
+const { sendResponse, handleError } = require('../../src/helpers/helper');
+
+// Importing the CrudService to handle CRUD operations on models
+const CrudService = require("../../src/services/CrudService"); 
+
+// Creating service instances for each model to perform CRUD operations
+const vehicleLogService = new CrudService(VehicleLog); 
+const vehicleExitRequestService = new CrudService(VehicleExitRequest); 
+const vehicleMaintenceLogService = new CrudService(vehicleMaintenceLog); 
+const jobCardQuotationService = new CrudService(jobCardQuotation); 
+const productService = new CrudService(Product); 
+
+// Importing the PaginationService to handle pagination logic for querying data
+const paginationService = require("../../src/services/PaginationService"); 
+
+ // moment.js or JavaScript's native Date methods.
+const moment = require('moment'); 
 
 
 // Register Function for Vehicle Entry
@@ -109,81 +129,6 @@ exports.approveVehicleExisttRequest = async (req, res) => {
 };
 
 
-exports.addVehicleInServiceBay = async (req, res) => {
-  const { customer_name, address, vehicle_type, make_and_model, contact_number, dob } = req.body;
-  console.log("body", req.body);
-
-  try {
-    // Access uploaded files from req.files
-    const seat_pic = req.files['seat_pic'] ? req.files['seat_pic'][0].filename : undefined;
-    const odometer_pic = req.files['odometer_pic'] ? req.files['odometer_pic'][0].filename : undefined;
-    const focus_area_1_pic = req.files['focus_area_1_pic'] ? req.files['focus_area_1_pic'][0].filename : undefined;
-    const focus_area_2_pic = req.files['focus_area_2_pic'] ? req.files['focus_area_2_pic'][0].filename : undefined;
-    const vehicle_rc_pic = req.files['vehicle_rc_pic'] ? req.files['vehicle_rc_pic'][0].filename : undefined;
-    const vehicle_insurance_policy_pic = req.files['vehicle_insurance_policy_pic'] ? req.files['vehicle_insurance_policy_pic'][0].filename : undefined;
-
-    console.log("seat_pic", seat_pic);
-    console.log("odometer_pic", odometer_pic);
-    console.log("focus_area_1_pic", focus_area_1_pic);
-    console.log("focus_area_2_pic", focus_area_2_pic);
-
-    // Check if vehicle_number is an array, and convert it to a single string
-    let vehicleData = { vehicle_number: [req.body.vehicle_number, ""] };
-    if (Array.isArray(vehicleData.vehicle_number)) {
-      req.body.vehicle_number = vehicleData.vehicle_number.filter(Boolean).join(", ");
-      var vehicle_number = req.body.vehicle_number;
-    }
-
-    const reqData = {
-      vehicle_number,
-      customer_name,
-      address,
-      vehicle_type,
-      make_and_model,
-      contact_number,
-      dob,
-      seat_pic,       // Include the filenames in reqData
-      odometer_pic,
-      focus_area_1_pic,
-      focus_area_2_pic,
-      vehicle_rc_pic,
-      vehicle_insurance_policy_pic      
-    };
-
-    var response = await vehicleMaintenceLog.create(reqData);
-
-    // Get the base URL
-    const protocol = req.protocol;
-    const host = req.get('host');
-    const baseURL = `${protocol}://${host}`;
-
-    // Construct image URLs
-    const imageUrl = seat_pic ? `${baseURL}/uploads/${seat_pic}` : null;
-    const odometerUrl = odometer_pic ? `${baseURL}/uploads/${odometer_pic}` : null;
-    const focusArea1Url = focus_area_1_pic ? `${baseURL}/uploads/${focus_area_1_pic}` : null;
-    const focusArea2Url = focus_area_2_pic ? `${baseURL}/uploads/${focus_area_2_pic}` : null;
-    const vehicleRCUrl = vehicle_rc_pic ? `${baseURL}/uploads/${vehicle_rc_pic}` : null;
-    const vehicleInsurancePolicyPicUrl = vehicle_insurance_policy_pic ? `${baseURL}/uploads/${vehicle_insurance_policy_pic}` : null;
-
-    // Attach image URLs to the response data
-    var data = {
-      ...response.toObject(),
-        seat_pic: imageUrl,
-        odometer_pic: odometerUrl,
-        focus_area_1_pic: focusArea1Url,
-        focus_area_2_pic: focusArea2Url,
-        vehicle_rc_pic: vehicleRCUrl,
-        vehicle_insurance_policy_pic: vehicleInsurancePolicyPicUrl
-    };
-
-    console.log("imageUrls", data.images);
-
-    return sendResponse(res, 200, true, "Vehicle added in bay successfully.", data);
-  } catch (error) {
-    return handleError(error, res);
-  }
-};
-
 exports.getBayVehicles = async (req, res) => {
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 10;
@@ -267,4 +212,248 @@ exports.getBayVehicles = async (req, res) => {
   }
 };
 
+
+// Get list of waiting vehicles
+exports.getWaitingVehicles = async (req, res) => {
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+  const searchBy =  'vehicle_number';
+  const searchKey = req.query.search_key || '';
+  const sort = { createdAt: -1 }; // Sort by "createdAt" in descending order
+
+  try {
+   
+
+    // Always include `status: 'waiting'` in the search criteria
+    let searchCriteria = { status: 'waiting' };
+
+    // If `searchBy` and `searchKey` are provided, add them to `searchCriteria`
+    if (searchBy && searchKey) {
+        searchCriteria[searchBy] = searchKey;
+    }
+    const result = await paginationService.paginate(VehicleLog,[], page, limit, searchCriteria, sort);
+
+    if (result) {
+      return sendResponse(res, 200, true, "Data found", result);
+    } else {
+      return sendResponse(res, 200, false, "No products found", []);
+    }
+  } catch (error) {
+    return handleError(error, res);
+  }
+};
+
+// create Job Card
+exports.createJobCard = async (req, res) => {
+  const {
+    customer_name, address, pin_code, email, visit_type, vehicle_type, make_and_model, contact_number,
+    dob, booking_number, gst_number, vehicle_reg_no, vin_no, engine_no, model_no, sold_by, sold_date,
+    odo, color_name, work_type, ro_date, ro_number, printing_time, special_message,
+    ac_filter,brakes,air_filter,engine_oil,service_type,cusomer_request,additional_description
+  } = req.body;
+
+  console.log("body", req.body);
+
+  try {
+    var vehicleNumber = req.body.vehicle_number;
+    const existingJobCard = await vehicleMaintenceLogService.findOne({'vehicle_number': vehicleNumber});
+
+    if (existingJobCard) return sendResponse(res, 400, false, "Job card already exists.");
+
+
+
+    // Access uploaded files from req.files
+    const seat_pic = req.files['seat_pic'] ? req.files['seat_pic'][0].filename : undefined;
+    const odometer_pic = req.files['odometer_pic'] ? req.files['odometer_pic'][0].filename : undefined;
+    const focus_area_1_pic = req.files['focus_area_1_pic'] ? req.files['focus_area_1_pic'][0].filename : undefined;
+    const focus_area_2_pic = req.files['focus_area_2_pic'] ? req.files['focus_area_2_pic'][0].filename : undefined;
+    const vehicle_rc_pic = req.files['vehicle_rc_pic'] ? req.files['vehicle_rc_pic'][0].filename : undefined;
+    const vehicle_insurance_policy_pic = req.files['vehicle_insurance_policy_pic'] ? req.files['vehicle_insurance_policy_pic'][0].filename : undefined;
+    const vehicle_rear_pic = req.files['vehicle_rear_pic'] ? req.files['vehicle_rear_pic'][0].filename : undefined;
+    const vehicle_right_pic = req.files['vehicle_right_pic'] ? req.files['vehicle_right_pic'][0].filename : undefined;
+    const vehicle_left_pic = req.files['vehicle_left_pic'] ? req.files['vehicle_left_pic'][0].filename : undefined;
+    const vehicle_front_pic = req.files['vehicle_front_pic'] ? req.files['vehicle_front_pic'][0].filename : undefined;
+
+
+    // Check if vehicle_number is an array, and convert it to a single string
+    let vehicleData = { vehicle_number: [req.body.vehicle_number, ""] };
+    if (Array.isArray(vehicleData.vehicle_number)) {
+      req.body.vehicle_number = vehicleData.vehicle_number.filter(Boolean).join(", ");
+      var vehicle_number = req.body.vehicle_number;
+    }
+
+    let expected_delivery_time = "17:00";
+      // Convert the ro_date string to a Date object
+      let roDateObj = new Date(ro_date);
+
+      // Add 2 days to the roDateObj
+      roDateObj.setDate(roDateObj.getDate() + 2);
+
+      // Format the expected delivery date as YYYY-MM-DD
+      let expected_delivery_date = roDateObj.toISOString().split('T')[0]; // Format the date to 'YYYY-MM-DD'
+
+
+    const reqData = {
+      vehicle_number,
+      customer_name,
+      address,
+      pin_code,
+      email,
+      visit_type,
+      vehicle_type,
+      make_and_model,
+      contact_number,
+      dob,
+      booking_number,
+      gst_number,
+      vehicle_reg_no,
+      vin_no,
+      engine_no,
+      model_no,
+      sold_by,
+      sold_date,
+      odo,
+      color_name,
+      work_type,
+      ro_date,
+      ro_number,
+      printing_time,
+      special_message,
+      seat_pic,
+      odometer_pic,
+      focus_area_1_pic,
+      focus_area_2_pic,
+      vehicle_rc_pic,
+      vehicle_insurance_policy_pic,
+      vehicle_rear_pic,
+      vehicle_right_pic,
+      vehicle_left_pic,
+      vehicle_front_pic,
+      expected_delivery_date,
+      expected_delivery_time
+    };
+
+    var response = await vehicleMaintenceLogService.create(reqData);
+
+    if (!response || !response._id) {
+      return sendResponse(res, 500, false, "Failed.");
+    } 
+
+    // Get the base URL
+    const protocol = req.protocol;
+    const host = req.get('host');
+    const baseURL = `${protocol}://${host}`;
+
+    // Construct image URLs
+    const imageUrl = seat_pic ? `${baseURL}/uploads/${seat_pic}` : null;
+    const odometerUrl = odometer_pic ? `${baseURL}/uploads/${odometer_pic}` : null;
+    const focusArea1Url = focus_area_1_pic ? `${baseURL}/uploads/${focus_area_1_pic}` : null;
+    const focusArea2Url = focus_area_2_pic ? `${baseURL}/uploads/${focus_area_2_pic}` : null;
+    const vehicleRCUrl = vehicle_rc_pic ? `${baseURL}/uploads/${vehicle_rc_pic}` : null;
+    const vehicleInsurancePolicyPicUrl = vehicle_insurance_policy_pic ? `${baseURL}/uploads/${vehicle_insurance_policy_pic}` : null;
+    const vehicleRearUrl = vehicle_rear_pic ? `${baseURL}/uploads/${vehicle_rear_pic}` : null;
+    const vehicleRightUrl = vehicle_right_pic ? `${baseURL}/uploads/${vehicle_right_pic}` : null;
+    const vehicleLeftUrl = vehicle_left_pic ? `${baseURL}/uploads/${vehicle_left_pic}` : null;
+    const vehicleFrontUrl = vehicle_front_pic ? `${baseURL}/uploads/${vehicle_front_pic}` : null;
+
+    // Attach image URLs to the response data
+    var data = {
+      ...response.toObject(),
+      seat_pic: imageUrl,
+      odometer_pic: odometerUrl,
+      focus_area_1_pic: focusArea1Url,
+      focus_area_2_pic: focusArea2Url,
+      vehicle_rc_pic: vehicleRCUrl,
+      vehicle_insurance_policy_pic: vehicleInsurancePolicyPicUrl,
+      vehicle_rear_pic: vehicleRearUrl,
+      vehicle_right_pic: vehicleRightUrl,
+      vehicle_left_pic: vehicleLeftUrl,
+      vehicle_front_pic: vehicleFrontUrl
+    };
+
+    
+
+
+    return sendResponse(res, 200, true, "Job card created successfully.", data);
+  } catch (error) {
+    return handleError(error, res);
+  }
+};
+
+// Get a Job Card Detail by ID
+exports.getJobCardDetail = async (req, res) => {
+  const { jobCardId } = req.params;
+  try {
+    const jobCard = await vehicleMaintenceLogService.findOne({ _id: jobCardId });
+    if (!jobCard) return sendResponse(res, 400, false, "Job card does not exist.");
+
+    return sendResponse(res, 200, true, "Data found", jobCard);
+  } catch (error) {
+    return handleError(error, res);
+  }
+};
+
+// create Job Card Quotation
+
+exports.createJobCardQuotation = async (req, res) => {
+  const {job_card_id,product_id,quotaion_for,quantity,price,total_price} = req.body;
+  try {
+    const product = await productService.findOne({ _id: product_id });
+    
+    if (!product) {
+      return sendResponse(res, 400, false, "Product not found.");
+    }
+
+    const jobCard = await vehicleMaintenceLogService.findOne({ _id: job_card_id });
+    if (!jobCard) {
+      return sendResponse(res, 400, false, "jobCard not found.");
+    }
+
+
+    // Check if the price in the quotation matches the product's actual price
+    if (product.price !== req.body.price) {
+      return sendResponse(res, 400, false, "Price should match the actual product price.");
+    }
+
+
+    var response = await jobCardQuotationService.create(req.body);
+    if (!response || !response._id) {
+      return sendResponse(res, 500, false, "Failed.");
+    } 
+    return sendResponse(res, 200, true, "Quotation created successfully.", response);
+  } catch (error) {
+    return handleError(error, res);
+  }
+};
+
+// get a job card quotation
+exports.getJobCardQuotation = async (req, res) => {
+  const { jobCardId } = req.params;
+  try {
+    const response = await jobCardQuotationService.find({ job_card_id: jobCardId });
+    if (response) {
+      return sendResponse(res, 200, true, "Data found successfully",response);
+    } else {
+      return sendResponse(res, 404, false, "Quotation not found.");
+    }
+  } catch (error) {
+    return handleError(error, res);
+  }
+};
+
+
+// Delete a job card quotation by ID
+exports.deleteJobCardQuotation = async (req, res) => {
+  const { quotationId } = req.params;
+  try {
+    const response = await jobCardQuotationService.delete({ _id: quotationId });
+    if (response) {
+      return sendResponse(res, 200, true, "Quotation deleted successfully");
+    } else {
+      return sendResponse(res, 404, false, "Quotation not found or deletion failed.");
+    }
+  } catch (error) {
+    return handleError(error, res);
+  }
+};
 

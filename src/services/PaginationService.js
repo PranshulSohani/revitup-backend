@@ -11,10 +11,11 @@ class PaginationService {
    * @param {Object} [sort] - Sort criteria
    * @returns {Object} Paginated result
    */
-  static async paginate(model, aggregateStages = [], page = 1, limit = 10, search = {}, sort = { createdAt: -1 }) {
+  static async paginate(model, aggregateStages = [], page = 1, limit = 10, searchCriteria = {}, sort = { createdAt: -1 }) {
+    console.log("searchCriteria",searchCriteria)
     // Apply search criteria if provided
-    if (Object.keys(search).length) {
-      aggregateStages.push({ $match: search });
+    if (Object.keys(searchCriteria).length) {
+      aggregateStages.push({ $match: searchCriteria });
     }
 
     // Apply sort criteria
