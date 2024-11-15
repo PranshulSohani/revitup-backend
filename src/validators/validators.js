@@ -25,12 +25,12 @@ const registerValidation = joi.object({
     "any.required": "Designation is required."
   }),
   role_id: joi.number()
-  .valid(2,3,4,5,6,7,8) // Allowed values for role_id
+  .valid(2,3,4,5,6,7,8,9) // Allowed values for role_id
   .required()
   .messages({
     "number.base": "Role ID must be a number.",
     "any.required": "Role ID is required.",
-    "any.only": "Role ID must be one of the following:2,3,4,5,6,7,8."
+    "any.only": "Role ID must be one of the following:2,3,4,5,6,7,8,9."
   }),
   password: joi.string()
   .min(8) // Minimum length of 8 characters
@@ -62,11 +62,11 @@ const loginValidation = joi.object({
     "any.required": "Username is required."
   }),
   role_id: joi.number()
-  .valid(2,3,4,5,6,7,8) // Allowed values for role_id
+  .valid(2,3,4,5,6,7,8,9) // Allowed values for role_id
   .required().messages({
     "number.empty": "Role ID is required.",
     "any.required": "Role ID is required.",
-    "any.only": "Role ID must be one of the following:2,3,4,5,6,7,8."
+    "any.only": "Role ID must be one of the following:2,3,4,5,6,7,8,9."
   }),
   password: joi.string().min(8).required().messages({
     "string.empty": "Password is required.",
