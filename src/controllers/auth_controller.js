@@ -45,10 +45,10 @@ exports.login = async (req, res) => {
     const query = mobileRegex.test(username) ? { mobile_number: username, role_id } : { email: username.toLowerCase(), role_id };
 
     const user = await userService.findOne(query);
-    if (!user) return sendResponse(res, 400, false, "Employee record not exist.");
+    if (!user) return sendResponse(res, 400, false, "Invalid username.");
 
     const validPassword = await bcrypt.compare(password, user.password);
-    if (!validPassword) return sendResponse(res, 401, false, "Employee record not exist.");
+    if (!validPassword) return sendResponse(res, 401, false, "Invalid password.");
     
     // Track user as available upon successful login
     const updateData = { availablity_status: 'available' }; // Update status to available
@@ -74,9 +74,10 @@ exports.login = async (req, res) => {
      }
 
     const tokenData = { id: user._id, email: user.email, full_name: user.full_name };
-    const token = jwt.sign(tokenData, process.env.TOKEN_SECRET, { expiresIn: "1h" });
+    const token = jwt.sign(tokenData, process.env.TOKEN_SECRET);
+    const isTokenActive  = true;
 
-    await userService.update({ _id: user._id }, { token });
+    await userService.update({ _id: user._id }, { token,isTokenActive });
 
     return sendResponse(res, 200, true, "Login Successfully", { token });
   } catch (error) {
@@ -117,28 +118,13 @@ exports.logout = async (req, res) => {
     const token = req.header('Authorization').replace('Bearer ', ''); // Extract the token from the Authorization header
     const decoded = jwt.verify(token, process.env.TOKEN_SECRET); // Verify the token
     
-    console.log("decoded",decoded)
-    // Find the most recent attendance record for the employee (assuming each user only has one active attendance record at a time)
-  
-
-    console.log("Query for attendance:", {
-      employee_id: decoded.id,
-      $or: [
-        { check_out_date_time: { $exists: false } },
-        { check_out_date_time: null }
-      ]
-    });
-    
     const attendance = await attendanceService.findOne({
       employee_id: decoded.id,
       $or: [
         { check_out_date_time: { $exists: false } },
         { check_out_date_time: null }
       ]
-    });
-    
-    console.log("Attendance found:", attendance);
-    
+    });  
 
 
     if (!attendance) {
@@ -165,7 +151,7 @@ exports.logout = async (req, res) => {
     if (!user) return sendResponse(res, 400, false, "User not found.");
 
     // Update the user to remove the token and mark them as unavailable
-    const updateData = { token: null, availablity_status: 'unavailable' }; 
+    const updateData = { token: null, availablity_status: 'unavailable','isTokenActive' : false  }; 
     await userService.update({ _id: user._id }, updateData);
 
     return sendResponse(res, 200, true, "Logged out successfully.");

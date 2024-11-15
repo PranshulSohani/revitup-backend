@@ -31,15 +31,32 @@ router.post("/approve-exit-request/:requestId", [auth, role([1])], vehicleContro
 // GET /vehicles/entered - Get all entered vehicles
 router.get("/entered", [auth, role([6])], vehicleController.getEnteredVehicles);
 
-// POST /vehicles/service-bay - Add vehicle to service bay with images
-router.post("/service-bay", auth, upload.fields([
+
+// GET /vehicles/waiting - Get all waiting vehicles
+router.get("/waiting", [auth, role([7])], vehicleController.getWaitingVehicles);
+
+// POST /vehicles/create-job-card - Creae job card to service bay with images
+router.post("/create-job-card", auth, upload.fields([
   { name: 'seat_pic', maxCount: 1 },
   { name: 'odometer_pic', maxCount: 1 },
   { name: 'focus_area_1_pic', maxCount: 1 },
   { name: 'focus_area_2_pic', maxCount: 1 },
   { name: 'vehicle_rc_pic', maxCount: 1 },
   { name: 'vehicle_insurance_policy_pic', maxCount: 1 },
-]), vehicleController.addVehicleInServiceBay);
+]), vehicleController.createJobCard);
+
+// GET /vehicles/get-job-card/:jobCardId - Get job card details
+router.get("/get-job-card/:jobCardId", auth, vehicleController.getJobCardDetail);
+
+// GET /vehicles/create-job-card-quotation - create job card quotation of vehicle
+router.post("/create-job-card-quotation", auth, vehicleController.createJobCardQuotation);
+
+// GET /vehicles/get-job-card-quotations/:jobCardId - Get job card quotations
+router.get("/get-job-card-quotation/:jobCardId", auth, vehicleController.getJobCardQuotation);
+
+
+// GET /vehicles/create-job-card-quotation - create job card quotation of vehicle
+router.delete("/delete-job-card-quotation/:quotationId", auth, vehicleController.deleteJobCardQuotation);
 
 // GET /vehicles/bay - Get all vehicles in service bay
 router.get("/bay", [auth, role([2])], vehicleController.getBayVehicles);
