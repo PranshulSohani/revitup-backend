@@ -16,7 +16,7 @@ exports.register = async (req, res) => {
   try {
     const { error } = registerValidation.validate(req.body);
     if (error) return sendResponse(res, 400, false, error.details[0].message);
-
+    
     const existingUser = await userService.findOne({
       role_id,
       $or: [{ mobile_number }, { email }],

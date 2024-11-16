@@ -4,6 +4,10 @@ const VehicleExitRequest = require("../../src/models/VehicleExitRequest");
 const vehicleMaintenceLog = require("../../src/models/VehicleMaintenceLog");
 const jobCardQuotation = require("../../src/models/JobCardQuotation");
 const Product = require("../../src/models/Product");
+const BaysWorker = require("../../src/models/BaysWorker");
+const WorkersTask = require("../../src/models/WorkersTask");
+const User = require("../../src/models/User");
+
 
 // Importing validation functions
 const { vehicleValidation } = require('../../src/validators/validators');
@@ -20,6 +24,9 @@ const vehicleExitRequestService = new CrudService(VehicleExitRequest);
 const vehicleMaintenceLogService = new CrudService(vehicleMaintenceLog); 
 const jobCardQuotationService = new CrudService(jobCardQuotation); 
 const productService = new CrudService(Product); 
+const bayWorkerService = new CrudService(BaysWorker);
+const workersTaskService = new CrudService(WorkersTask);
+const userService = new CrudService(User);
 
 // Importing the PaginationService to handle pagination logic for querying data
 const paginationService = require("../../src/services/PaginationService"); 
@@ -415,6 +422,10 @@ exports.createJobCardQuotation = async (req, res) => {
       return sendResponse(res, 400, false, "Price should match the actual product price.");
     }
 
+    // Check if the quantity in the quotation exceeds the available stock
+    if (req.body.quantity > product.stock) {
+      return sendResponse(res, 400, false, "Quantity exceeds available stock.");
+    }
 
     var response = await jobCardQuotationService.create(req.body);
     if (!response || !response._id) {
@@ -456,4 +467,138 @@ exports.deleteJobCardQuotation = async (req, res) => {
     return handleError(error, res);
   }
 };
+
+
+exports.assignWorker = async (req, res) => {
+  try {
+    const { worker_id, job_card_id } = req.body;
+
+    var checkExitenceofWorkerInBay = await bayWorkerService.findOne({ worker_id, job_card_id });
+    if(checkExitenceofWorkerInBay){
+      return sendResponse(res, 200, false, "Worker already assgined");
+    } else {
+      const response = await bayWorkerService.create(req.body);
+
+     if (response) {
+      return sendResponse(res, 200, true, "Worker assigned successfully",response);
+
+     } else {
+        return sendResponse(res, 404, false, "User not found or failed.");
+      }
+    }
+    
+
+  } catch (error) {
+    return handleError(error, res);
+  }
+};
+
+// add task of worker in project
+exports.addTask = async (req, res) => {
+  try {
+    const { project_manager_id, project_name,job_card_id,task_description } = req.body;
+     
+    const bayWorkerResponse = await bayWorkerService.find({'job_card_id' : job_card_id});   
+
+    if (bayWorkerResponse.length > 0) {
+      const response = await workersTaskService.create(req.body);
+      if (response) {
+      return sendResponse(res, 200, true, "Task added successfully",response);
+
+      } else {
+      return sendResponse(res, 404, false, "Failed.");
+
+      }
+    } else {
+      return sendResponse(res, 200, false, "No workers added in job card");
+
+    }  
+  } catch (error) {
+    return handleError(error, res);
+  }
+};
+
+// Get all task 
+exports.getAllTask = async (req, res) => {
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+  const searchKey = req.query.seach_key || '';
+
+  const myCustomLabels = {
+    totalDocs: "totalDocs",
+    docs: "data",
+    limit: "limit",
+    page: "page",
+    nextPage: "nextPage",
+    prevPage: "prevPage",
+    totalPages: "totalPages",
+    pagingCounter: "slNo",
+    meta: "paginator",
+  };
+
+  const options = { page, limit, customLabels: myCustomLabels };
+
+  try {
+    const myAggregate = WorkersTask.aggregate([
+      { $sort: { createdAt: -1 } },
+      {
+        $lookup: {
+          from: 'vehiclemaintencelogs',
+          localField: 'job_card_id',
+          foreignField: '_id',
+          as: 'job_card_details',
+        },
+      },
+      {
+        $unwind: {
+          path: '$job_card_details',
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+    ]);
+
+    const result = await WorkersTask.aggregatePaginate(myAggregate, options);
+
+    if (result) {
+      // Fetch bay worker counts for each task
+      const dataWithCounts = await Promise.all(
+        result.data.map(async (task) => {
+          const bayWorkers = await bayWorkerService.find({'job_card_id' : task.job_card_id});  
+          var bayWorkerCount = bayWorkers.length;
+
+          // Map through each bay worker to get their details
+          const workers = await Promise.all(
+            bayWorkers.map(async (bayWorker) => {
+              console.log("bayWorker",bayWorker)
+              const workerDetails = await userService.findOne({ '_id': bayWorker.worker_id }); 
+              return workerDetails;
+            })
+          );
+
+          // Flatten the array of workers to avoid nested arrays
+          const flatWorkers = workers.flat();
+          return {
+            ...task,
+            workers: flatWorkers,
+            team_members : bayWorkerCount,
+          };
+        })
+      );
+
+      // Update result with the modified data
+      result.data = dataWithCounts;
+
+      res.status(200).send({
+        status: true,
+        message: "success",
+        data: result,
+      });
+    } else {
+      res.status(200).send({ status: false, message: "No data found", data: [] });
+    }
+  } catch (error) {
+    res.status(500).send({ status: false, message: error.toString() || "Internal Server Error" });
+  }
+};
+
 
