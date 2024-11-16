@@ -26,7 +26,31 @@ userSchema.pre('save', async function(next) {
     if (this.isModified('password')) {
         this.password = await bcrypt.hash(this.password, 10);
     }
-    next();
+    var roles = [
+        { role_id: 1, role_name: 'Admin' },
+        { role_id: 2, role_name: 'Bay Manager'},
+        { role_id: 3, role_name: 'Project Manager'},
+        { role_id: 4, role_name: 'Worker' },
+        { role_id: 5, role_name: 'CEO' },
+        { role_id: 6, role_name: 'Security Guard'},
+        { role_id: 7, role_name: 'Service Manager'},
+        { role_id: 8, role_name: 'Inventory Manager'},
+        { role_id: 9, role_name: 'HR Manager'},
+      
+      ];
+     roles.map(role => {
+        var desRoleId = roles.filter(role => role.role_name == this.designation);
+        if(desRoleId.length > 0){
+            if(desRoleId[0].role_id != this.role_id){
+                const error = new Error(`Invalid role_id: ${this.role_id} for ${this.designation}. Please provide a valid role.`);
+                return next(error); // Pass an error to prevent saving the document
+            }
+        }
+    });
+
+      
+
+   next();
 });
 
 module.exports = mongoose.model("User", userSchema);

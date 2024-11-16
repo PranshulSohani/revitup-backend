@@ -1,6 +1,29 @@
 const joi = require('joi').extend(require("@joi/date"));
 const User = require("../../src/models/User");
+// Define roles array
+const roles = [
+  { role_id: 1, role_name: 'Admin' },
+  { role_id: 2, role_name: 'Bay Manager' },
+  { role_id: 3, role_name: 'Project Manager' },
+  { role_id: 4, role_name: 'Worker' },
+  { role_id: 5, role_name: 'CEO' },
+  { role_id: 6, role_name: 'Security Guard' },
+  { role_id: 7, role_name: 'Service Manager' },
+  { role_id: 8, role_name: 'Inventory Manager' },
+  { role_id: 9, role_name: 'HR Manager' }
+];
 
+// Extract valid role_ids
+const validRoleIds = roles
+    .filter(role => role.role_id !== 1) // Exclude role_id 1
+    .map(role => role.role_id); // Extract remaining role_ids
+
+
+// Exclude "Admin" role by filtering out its role_id
+const validRoleNames = roles
+    .filter(role => role.role_id !== 1) // Exclude roles with role_id = 1
+    .map(role => role.role_name); // Extract role_name
+    
 
 const registerValidation = joi.object({
   full_name: joi.string().pattern(/^[A-Za-z]+(?:\s[A-Za-z]+)*$/) 
@@ -20,12 +43,14 @@ const registerValidation = joi.object({
     "string.pattern.base": "Mobile number must start with '+91' and be followed by 10 digits.",
     "any.required": "Mobile number is required."
   }),
-  designation: joi.string().required().messages({
+  designation: joi.string().valid(...validRoleNames).required().messages({
     "string.empty": "Designation is required.",
-    "any.required": "Designation is required."
+    "any.required": "Designation is required.",
+    "any.only": "Designation must be one of the following:Bay Manager, Project Manager, Worker, CEO, Security Guard, Service Manager, Inventory Manager, HR Manager."
+
   }),
   role_id: joi.number()
-  .valid(2,3,4,5,6,7,8,9) // Allowed values for role_id
+  .valid(...validRoleIds) // Allowed values for role_id
   .required()
   .messages({
     "number.base": "Role ID must be a number.",

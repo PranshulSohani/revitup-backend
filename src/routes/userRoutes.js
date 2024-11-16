@@ -22,10 +22,9 @@ router.put("/:userId", [auth, role([9])], userController.update);
 // DELETE /employees/:userId - Delete a specific user by ID
 router.delete("/:userId", [auth, role([9])], userController.delete);
 
-// GET /users/attendance - Get employee attendance list
+// GET /employees/attendance - Get employee attendance list
 router.get("/attendance-list", [auth, role([9])], userController.getEmployeeAttendanceList);
 
-// POST /users/assign-in-bay - Assign worker to a vehicle in the service bay
-router.post("/assign-in-bay", [auth, role([2])], userController.assignInBay);
+
 
 module.exports = router;

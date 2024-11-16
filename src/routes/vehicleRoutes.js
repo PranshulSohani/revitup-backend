@@ -62,5 +62,15 @@ router.delete("/delete-job-card-quotation/:quotationId", auth, vehicleController
 router.get("/bay", [auth, role([2])], vehicleController.getBayVehicles);
 
 
+// POST /employees/assign-worker - Assign worker to a vehicle in the service bay
+router.post("/assign-worker", [auth, role([2])], vehicleController.assignWorker);
+
+// POST /employees/add-task - add task of worker in project
+router.post("/add-task", [auth, role([3])], vehicleController.addTask);
+
+// Get list of task
+router.get("/get-task-list", [auth, role([3])], vehicleController.getAllTask);
+
+
 
 module.exports = router;

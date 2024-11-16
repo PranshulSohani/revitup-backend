@@ -41,8 +41,8 @@ const handleError = (error, res) => {
     return sendResponse(res, 400, false, Object.values(error.errors).map(err => err.message).join(", "));
   }
 
-  console.error(error);
-  return sendResponse(res, 500, false, "An internal server error occurred."+error);
+  console.log("error"+error);
+  return sendResponse(res, 500, false, ""+error);
 };
 
 

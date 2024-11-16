@@ -1,16 +1,14 @@
 const User = require("../../src/models/User");
-const BaysWorker = require("../../src/models/BaysWorker");
+
 const EmployeeAttendance = require("../../src/models/EmployeeAttendance");
 const { sendResponse, handleError, getNameInitials } = require('../../src/helpers/helper');
 const CrudService = require("../../src/services/CrudService");
 const moment = require('moment');
 const userService = new CrudService(User);
-const attendanceService = new CrudService(EmployeeAttendance);
-const bayService = new CrudService(BaysWorker);
+
 const { createEmployeeValidation,updateEmployeeValidation } = require('../../src/validators/validators');
 
-
-// creae new user
+// create new user
 exports.create = async (req, res) => {
   const { full_name, email, mobile_number, designation, role_id, password,department_id,employment_type,joining_date } = req.body;
 
@@ -271,35 +269,5 @@ exports.getEmployeeAttendanceList = async (req, res) => {
   } catch (error) {
     console.log("error", error);
     res.status(500).send({ status: false, message: error.toString() || "Internal Server Error" });
-  }
-};
-
-
-exports.assignInBay = async (req, res) => {
-  try {
-    const { worker_id, bay_id } = req.body;
-
-    console.log("body",req.body);
-
-    var checkExitenceofWorkerInBay = await bayService.findOne({ worker_id, bay_id });
-    if(checkExitenceofWorkerInBay){
-      return sendResponse(res, 200, false, "Worker already assgined");
-    } else {
-      const response = await bayService.create(req.body);
-
-   
-    console.log("response",response)
-     if (response) {
-      return sendResponse(res, 200, true, "Worker assgined successfully",response);
-
-     } else {
-      return sendResponse(res, 404, false, "User not found or update failed.");
-
-     }
-    }
-    
-
-  } catch (error) {
-    return handleError(error, res);
   }
 };

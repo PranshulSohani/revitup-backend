@@ -17,8 +17,7 @@ Server.timeout = 10000;
 app.use(cors({ origin: '*' }))
 app.use(express.json());
 app.use("/api", require("../src/routes/api.routes"));
-console.log("__dirname",__dirname);
-console.log("__dirname 2",path.join(__dirname, '/uploads'));
+app.use("/admin", require("../src/routes/admin.routes"));
 app.use('/uploads', express.static(path.join(__dirname, '/uploads')));
 
 app.use(express.urlencoded({ extended: true }));
