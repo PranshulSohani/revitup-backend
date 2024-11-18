@@ -37,8 +37,6 @@ exports.register = async (req, res) => {
 // Login Function
 exports.login = async (req, res) => {
   try {
-    const { error } = loginValidation.validate(req.body);
-    if (error) return sendResponse(res, 400, false, error.details[0].message);
 
     const { username, role_id, password } = req.body;
     const mobileRegex = /^\+91[0-9]{10}$/;
