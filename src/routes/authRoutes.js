@@ -3,6 +3,8 @@ const express = require('express');
 const router = express.Router();
 const authController = require('../controllers/auth_controller');
 const auth = require('../middleware/auth');
+const role = require('../middleware/role');
+const validateLogin  = require('../middleware/validateLogin');
 
 // Authentication routes
 
@@ -10,7 +12,7 @@ const auth = require('../middleware/auth');
 router.post("/register", authController.register);
 
 // POST /auth/login - Login a user
-router.post("/login", authController.login);
+router.post("/login",validateLogin, authController.login);
 
 // PUT /auth/change-password - Change password for an authenticated user
 router.put("/change-password", auth, authController.changePassword);

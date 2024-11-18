@@ -8,19 +8,19 @@ const role = require('../middleware/role');
 // User routes
 
 // POST /products - Create a new product
-router.post("/create",auth, userController.create);   
+router.post("/create",[auth, role([1,2,9])], userController.create);   
 
 // Get list of users
-router.get("/", [auth, role([2,9])], userController.getAll);
+router.get("/", [auth, role([1,2,9])], userController.getAll);
 
 // GET /employees/:userId - Get user details by user ID
-router.get("/:userId", auth, userController.get);
+router.get("/:userId", [auth, role([1,2,9])], userController.get);
 
 // PUT /employees/:userId - Update a specific user by ID
-router.put("/:userId", [auth, role([9])], userController.update); 
+router.put("/:userId", [[auth, role([1,2,9])], role([9])], userController.update); 
 
 // DELETE /employees/:userId - Delete a specific user by ID
-router.delete("/:userId", [auth, role([9])], userController.delete);
+router.delete("/:userId", [[auth, role([1,2,9])], role([9])], userController.delete);
 
 // GET /employees/attendance - Get employee attendance list
 router.get("/attendance-list", [auth, role([9])], userController.getEmployeeAttendanceList);

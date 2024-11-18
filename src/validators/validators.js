@@ -81,25 +81,45 @@ const registerValidation = joi.object({
   }),
 });
 
-const loginValidation = joi.object({
-  username: joi.string().required().messages({
-    "string.empty": "Username is required.",
-    "any.required": "Username is required."
-  }),
-  role_id: joi.number()
-  .valid(2,3,4,5,6,7,8,9) // Allowed values for role_id
-  .required().messages({
-    "number.empty": "Role ID is required.",
-    "any.required": "Role ID is required.",
-    "any.only": "Role ID must be one of the following:2,3,4,5,6,7,8,9."
-  }),
-  password: joi.string().min(8).required().messages({
-    "string.empty": "Password is required.",
-    "string.min": "Password must be at least 8 characters long.",
-    "any.required": "Password is required."
-  }),
-  
-});
+// Function to dynamically generate the schema
+const loginValidation = (url) => {
+  // Common base schema
+  const schema = {
+    username: joi.string().required().messages({
+      "string.empty": "Username is required.",
+      "any.required": "Username is required."
+    }),
+    password: joi.string().min(8).required().messages({
+      "string.empty": "Password is required.",
+      "string.min": "Password must be at least 8 characters long.",
+      "any.required": "Password is required."
+    }),
+  };
+
+  // Conditional role_id validation based on URL
+  if (url.includes('/api')) {
+    schema.role_id = joi.number()
+      .valid(2, 3, 4, 5, 6, 7, 8, 9) // Excludes 1
+      .required()
+      .messages({
+        "number.empty": "Role ID is required.",
+        "any.required": "Role ID is required.",
+        "any.only": "Role ID must be one of the following: 2, 3, 4, 5, 6, 7, 8, 9."
+      });
+  } else if (url.includes('/admin')) {
+    schema.role_id = joi.number()
+      .valid(1) // Only allows 1
+      .required()
+      .messages({
+        "number.empty": "Role ID is required.",
+        "any.required": "Role ID is required.",
+        "any.only": "Role ID must be 1."
+      });
+  }
+
+  return joi.object(schema);
+};
+
 
 
 
@@ -226,8 +246,8 @@ const baseEmployeeValidation = joi.object({
   .format("YYYY-MM-DD")
   .optional()
   .messages({
-    "date.base": "Joining date must be a valid date.",
-    "date.format": "Joining date must be in YYYY-MM-DD format."
+    "date.base": "joining date must be a valid date.",
+    "date.format": "joining date must be in YYYY-MM-DD format."
   })
   .custom( (value, helpers) => {
     if (value !== '') {
@@ -240,8 +260,8 @@ const baseEmployeeValidation = joi.object({
       console.log("joiningDate:", joiningDate);
 
       if (joiningDate > todayDate) {
-        console.log("Joining date is in the future.");
-        return helpers.message("Joining date should not be a future date.");
+        console.log("joining date is in the future.");
+        return helpers.message("joining date should not be a future date.");
       }
     }
     return value; // Return value if valid
@@ -261,6 +281,8 @@ const updateEmployeeValidation = baseEmployeeValidation.fork(
   (schema) => schema.optional()
 );
 
+
+
 module.exports = {
   registerValidation,
   loginValidation,
@@ -269,5 +291,5 @@ module.exports = {
   categoryValidation,
   productValidation,
   createEmployeeValidation,
-  updateEmployeeValidation 
+  updateEmployeeValidation,
 };
