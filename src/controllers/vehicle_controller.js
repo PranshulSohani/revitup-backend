@@ -139,6 +139,8 @@ exports.approveVehicleExisttRequest = async (req, res) => {
 exports.getBayVehicles = async (req, res) => {
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 10;
+  const searchKey = req.query.search_key || '';
+
   const myCustomLabels = {
     totalDocs: "totalDocs",
     docs: "data",
@@ -158,7 +160,9 @@ exports.getBayVehicles = async (req, res) => {
   };
   try {
     var myAggregate = vehicleMaintenceLog.aggregate([
-      
+      { 
+        $match: { 'vehicle_number': searchKey } // Match the specific vehicle number 
+      },
       {
         $sort: {
           createdAt: -1 // Sort by createdAt field in descending order (latest first)
@@ -166,12 +170,33 @@ exports.getBayVehicles = async (req, res) => {
       }
     ]);
     await vehicleMaintenceLog.aggregatePaginate(myAggregate, options)
-      .then((result) => {
+      .then(async(result) => {
         if (result) {
             const baseURL = `${req.protocol}://${req.get('host')}`;
 
+            result.data = await Promise.all(
+              result.data.map(async (vehicleMlog) => {
+                  console.log("vehicleMlog", vehicleMlog);
+                  var jobCardId = vehicleMlog._id;
+                  var checkExistenceOfWorkerInBay = await bayWorkerService.find({ 'job_card_id' : jobCardId });
+                  console.log("checkExistenceOfWorkerInBay",checkExistenceOfWorkerInBay)
+                  var status = (checkExistenceOfWorkerInBay.length > 0) ? "Working" : "Parking";
+                  vehicleMlog.status = status;
+                  return {
+                      ...vehicleMlog,
+                  };
+              })
+          );
+
+
               // Update image URLs for each event in the data array
-              result.data = result.data.map(vehicleMlog => {
+            /*  result.data = result.data.map((async) vehicleMlog => {
+              console.log("vehicleMlog",vehicleMlog);
+              var jobCardId =   vehicleMlog._id;
+              var checkExitenceofWorkerInBay = await bayWorkerService.findOne({ jobCardId });
+
+
+
               const seatImageUrl = baseURL + '/uploads/' + vehicleMlog.seat_pic;
               const odometerUrl = baseURL + '/uploads/' + vehicleMlog.odometer_pic;
               const focusArea1Url = baseURL + '/uploads/' + vehicleMlog.focus_area_1_pic;
@@ -189,7 +214,7 @@ exports.getBayVehicles = async (req, res) => {
                   vehicle_insurance_policy_pic: vehicleInsurancePolicyPicUrl,
                 };
                           
-               });         
+               });  */       
 
             res.status(200).send({
               status: true,
