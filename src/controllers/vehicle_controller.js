@@ -161,7 +161,9 @@ exports.getBayVehicles = async (req, res) => {
   try {
     var myAggregate = vehicleMaintenceLog.aggregate([
       { 
-        $match: { 'vehicle_number': searchKey } // Match the specific vehicle number 
+        $match: {
+          ...(searchKey ? { vehicle_number: { $regex: searchKey, $options: 'i' } } : {}) // Case-insensitive match
+        }
       },
       {
         $sort: {
@@ -653,5 +655,125 @@ exports.getAllTask = async (req, res) => {
     res.status(500).send({ status: false, message: error.toString() || "Internal Server Error" });
   }
 };
+
+
+exports.getWorkersWorking = async (req, res) => {
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+  const searchKey = req.query.search_key || '';
+
+  const myCustomLabels = {
+    totalDocs: 'totalDocs',
+    docs: 'data',
+    limit: 'limit',
+    page: 'page',
+    nextPage: 'nextPage',
+    prevPage: 'prevPage',
+    totalPages: 'totalPages',
+    pagingCounter: 'slNo',
+    meta: 'paginator',
+  };
+
+  const options = {
+    page: page,
+    limit: limit,
+    customLabels: myCustomLabels,
+  };
+
+  try {
+    var myAggregate = BaysWorker.aggregate([
+      {
+        $match: {
+          ...(searchKey ? { vehicle_number: { $regex: searchKey, $options: 'i' } } : {}), // Case-insensitive match
+        },
+      },
+      {
+        $lookup: {
+          from: 'vehiclemaintencelogs', // Collection to join
+          localField: 'job_card_id', // Field from the input documents
+          foreignField: '_id', // Field from the "from" collection
+          as: 'job_card_details', // Output array field
+        },
+      },
+      {
+        $lookup: {
+          from: 'users', // Collection to join
+          localField: 'worker_id', // Field from the input documents
+          foreignField: '_id', // Field from the "from" collection
+          as: 'worker_details', // Output array field
+        },
+      },
+      {
+        $sort: {
+          createdAt: -1, // Sort by createdAt field in descending order (latest first)
+        },
+      },
+    ]);
+
+    await BaysWorker.aggregatePaginate(myAggregate, options)
+      .then(async (result) => {
+        if (result) {
+          for (const worker of result.data) {
+            for (const jobCard of worker.job_card_details) {
+              // Fetch request parts for the specific job card
+              const request_parts = await jobCardQuotation.aggregate([
+                {
+                  $match: {
+                    job_card_id: jobCard._id, // Match by job card ID
+                  },
+                },
+                {
+                  $lookup: {
+                    from: 'products',
+                    localField: 'product_id',
+                    foreignField: '_id',
+                    as: 'product_details',
+                  },
+                },
+                {
+                  $unwind: {
+                    path: '$product_details',
+                    preserveNullAndEmptyArrays: true,
+                  },
+                },
+                {
+                  $sort: {
+                    createdAt: -1,
+                  },
+                },
+              ]);
+
+              // Add request_parts to the specific job card
+              jobCard.request_parts = request_parts;
+            }
+          }
+
+          res.status(200).send({
+            status: true,
+            message: 'success',
+            data: result,
+          });
+        } else {
+          res.status(200).send({
+            status: false,
+            message: 'No Events found',
+            data: null,
+          });
+        }
+      })
+      .catch((error) => {
+        res.send({
+          status: false,
+          message: error.toString() ?? 'Error',
+        });
+      });
+  } catch (error) {
+    res.status(500).send({
+      status: false,
+      message: error.toString() ?? 'Internal Server Error',
+    });
+  }
+};
+
 
 

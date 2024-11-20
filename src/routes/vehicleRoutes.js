@@ -72,4 +72,8 @@ router.post("/add-task", [auth, role([3])], vehicleController.addTask);
 router.get("/get-task-list", [auth, role([3])], vehicleController.getAllTask);
 
 
+// get workers working
+router.get("/get-workers-working", [auth, role([3])], vehicleController.getWorkersWorking);
+
+
 module.exports = router;
