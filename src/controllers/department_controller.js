@@ -1,8 +1,13 @@
+// Importing models
 const Department = require("../../src/models/Department");
-const BaysWorker = require("../../src/models/BaysWorker");
+
+// Importing helper functions
 const { sendResponse, handleError } = require('../../src/helpers/helper');
+
+// Importing the CrudService to handle CRUD operations on models
 const CrudService = require("../../src/services/CrudService");
-const moment = require('moment');
+
+// Creating service instances for each model to perform CRUD operations
 const departmentService = new CrudService(Department);
 
 // Get All Departments Function
@@ -12,9 +17,9 @@ exports.getAll = async (req, res) => {
       if (departments.length > 0) {
         return sendResponse(res, 200, true, "Data found",departments);
       } else {
-        res.status(200).send({ status: false, message: "No departments found", data: [] });
+        return sendResponse(res, 200, true, "No Data found", departments);
       }
     } catch (error) {
-      res.status(500).send({ status: false, message: error.toString() || "Internal Server Error" });
+      return handleError(error, res);
     }
   };

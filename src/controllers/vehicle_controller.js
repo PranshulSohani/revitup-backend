@@ -182,6 +182,34 @@ exports.getBayVehicles = async (req, res) => {
                   console.log("checkExistenceOfWorkerInBay",checkExistenceOfWorkerInBay)
                   var status = (checkExistenceOfWorkerInBay.length > 0) ? "Working" : "Parking";
                   vehicleMlog.status = status;
+
+                  const result = await jobCardQuotation.aggregate([
+                   
+                    {
+                        $lookup: {
+                            from: "products", // Name of the product collection
+                            localField: "product_id", // Field in jobCardQuotationService that references product
+                            foreignField: "_id", // Field in the product collection that matches product_id
+                            as: "product_details" // Output array field name for the joined product data
+                        }
+                    },
+                    {
+                        $unwind: { 
+                            path: "$product_details", // Unwind the product_details array to include a single object
+                            preserveNullAndEmptyArrays: true // Optional: keep job cards even if no product is found
+                        }
+                    },
+                    {
+                        $sort: {
+                            createdAt: -1 // Sort the results by creation date, descending
+                        }
+                    }
+                ]);
+                vehicleMlog.request_parts = result;
+                
+                console.log(result);
+                
+
                   return {
                       ...vehicleMlog,
                   };

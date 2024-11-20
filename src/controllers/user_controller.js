@@ -1,11 +1,21 @@
+// Importing models
 const User = require("../../src/models/User");
-
 const EmployeeAttendance = require("../../src/models/EmployeeAttendance");
+
+// Importing helper functions
 const { sendResponse, handleError, getNameInitials } = require('../../src/helpers/helper');
-const CrudService = require("../../src/services/CrudService");
+
+// Importing 'moment' library for date and time manipulation
+
 const moment = require('moment');
+
+// Importing the CrudService to handle CRUD operations on models
+const CrudService = require("../../src/services/CrudService");
+
+// Creating service instances for each model to perform CRUD operations
 const userService = new CrudService(User);
 
+// Importing validation functions
 const { createEmployeeValidation,updateEmployeeValidation } = require('../../src/validators/validators');
 
 // create new user
@@ -39,6 +49,9 @@ exports.getAll = async (req, res) => {
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 10;
   const roleId = req.query.role_id;
+  const searchKey = req.query.search_key || '';
+
+
   const myCustomLabels = {
     totalDocs: "totalDocs",
     docs: "data",
@@ -54,11 +67,12 @@ exports.getAll = async (req, res) => {
   const options = { page, limit, customLabels: myCustomLabels };
 
   try {
-    var myAggregate = User.aggregate([
+    var aggregateStages = [
       {
         $match: {
-          role_id: { $ne: 1 },
-          ...(roleId ? { role_id: Number(roleId) } : {}) // Ensure you have the ternary complete with : {}
+          role_id:  (req.user.role_id == 1) ?  { $nin: [1, 9] } : { $ne: 1  }, // Exclude role_id 1 and 9
+          ...(roleId ? { role_id: Number(roleId) } : {}), // Ensure you have the ternary complete with : {}
+          ...(searchKey ? { full_name: { $regex: searchKey, $options: 'i' } } : {}) // Case-insensitive match
         }
       },
       { $sort: { createdAt: -1 } },
@@ -76,7 +90,10 @@ exports.getAll = async (req, res) => {
           preserveNullAndEmptyArrays: true // keeps the user document even if no department is found
         }
       }
-    ]);
+    ];
+   
+    
+    var myAggregate = User.aggregate(aggregateStages);
     
 
     await User.aggregatePaginate(myAggregate, options).then((result) => {
@@ -271,3 +288,49 @@ exports.getEmployeeAttendanceList = async (req, res) => {
     res.status(500).send({ status: false, message: error.toString() || "Internal Server Error" });
   }
 };
+
+
+exports.getCounts = async (req, res) => {
+  try {
+    const today = moment().startOf("day").toDate();
+    const tomorrow = moment().endOf("day").toDate();
+
+    // Match today's attendance records
+    const matchConditions = {
+      createdAt: {
+        $gte: today,
+        $lt: tomorrow,
+      },
+    };
+
+    // Fetch total employees from the Users collection
+    const totalEmployees = await userService.findAll();
+
+    // Calculate present employees from the EmployeeAttendance collection
+    const attendanceAggregate = await EmployeeAttendance.aggregate([
+      { $match: matchConditions },
+      {
+        $group: {
+          _id: "$employee_id", // Group by employee ID to avoid duplicates
+        },
+      },
+    ]);
+
+    const presentEmployees = attendanceAggregate.length;
+
+    // Calculate absent employees
+    const absentEmployees = totalEmployees.length - presentEmployees;
+
+    var result = {
+      total_employees : totalEmployees.length,
+      present_employees : presentEmployees,
+      absent_employees : absentEmployees,
+    };
+
+    return sendResponse(res, 200, true, "Stock counts retrieved successfully", result);
+
+  } catch (error) {
+    return handleError(error, res);
+  }
+};
+

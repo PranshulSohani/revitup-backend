@@ -72,5 +72,4 @@ router.post("/add-task", [auth, role([3])], vehicleController.addTask);
 router.get("/get-task-list", [auth, role([3])], vehicleController.getAllTask);
 
 
-
 module.exports = router;

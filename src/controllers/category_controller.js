@@ -1,8 +1,23 @@
+// Importing models
 const Category = require("../../src/models/Category");
+const Product = require("../../src/models/Product");
+
+
+// Importing helper functions
 const { sendResponse, handleError } = require('../../src/helpers/helper');
+
+// Importing the PaginationService to handle Pagination operations on models
 const PaginationService = require("../../src/services/PaginationService");
+
+// Importing the CrudService to handle CRUD operations on models
 const CrudService = require("../../src/services/CrudService");
+
+// Creating service instances for each model to perform CRUD operations
 const categoryService = new CrudService(Category);
+const productService = new CrudService(Product);
+
+
+// Importing validation functions
 const { categoryValidation } = require('../../src/validators/validators');
 
 // Create a new category
@@ -88,7 +103,7 @@ exports.delete = async (req, res) => {
     const response = await categoryService.delete({ _id: categoryId });
     if (response) {
       // Delete all products with the deleted category ID
-      await Product.deleteMany({ category_id: categoryId });
+      await productService.deleteMany({ category_id: categoryId });
       return sendResponse(res, 200, true, "Category deleted successfully");
     } else {
       return sendResponse(res, 404, false, "Category not found or deletion failed.");
