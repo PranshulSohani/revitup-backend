@@ -1,10 +1,21 @@
+// Importing models
 const User = require("../../src/models/User");
 const EmployeeAttendance = require("../../src/models/EmployeeAttendance");
-const jwt = require('jsonwebtoken');
+
+// Importing third-party libraries for authentication and security
+const jwt = require('jsonwebtoken'); 
 const bcrypt = require('bcryptjs');
-const { registerValidation, loginValidation, changePasswordValidation } = require('../../src/validators/validators');
+
+// Importing helper functions
 const { sendResponse, handleError } = require('../../src/helpers/helper');
+
+// Importing validation functions
+const { registerValidation, loginValidation, changePasswordValidation } = require('../../src/validators/validators');
+
+// Importing the CrudService to handle CRUD operations on models
 const CrudService = require("../../src/services/CrudService");
+
+// Creating service instances for each model to perform CRUD operations
 const userService = new CrudService(User);
 const attendanceService = new CrudService(EmployeeAttendance);
 
@@ -50,11 +61,7 @@ exports.login = async (req, res) => {
     
     // Track user as available upon successful login
     const updateData = { availablity_status: 'available' }; // Update status to available
-    await userService.update({ _id: user._id }, updateData);
-    
-    
-
-
+    await userService.update({ _id: user._id }, updateData);  
     
     // add employee check in data
 

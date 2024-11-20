@@ -7,6 +7,9 @@ const role = require('../middleware/role');
 
 // RESTful routes for Product resource
 
+router.get("/get-counts", [auth, role([8])], productController.getCounts);
+
+
 // POST /products - Create a new product
 router.post("/create", [auth, role([8])], productController.create);            
 

@@ -1,8 +1,19 @@
+// Importing models
 const Product = require("../../src/models/Product");
+
+// Importing helper functions
 const { sendResponse, handleError } = require('../../src/helpers/helper');
-const PaginationService = require("../../src/services/PaginationService");
+
+// Importing the CrudService to handle CRUD operations on models
 const CrudService = require("../../src/services/CrudService");
+
+// Importing the PaginationService to handle Pagination operations on models
+const PaginationService = require("../../src/services/PaginationService");
+
+// Creating service instances for each model to perform CRUD operations
 const productService = new CrudService(Product);
+
+// Importing validation functions
 const { productValidation } = require('../../src/validators/validators');
 
 // Create a new product
@@ -117,6 +128,44 @@ exports.delete = async (req, res) => {
     } else {
       return sendResponse(res, 404, false, "Product not found or deletion failed.");
     }
+  } catch (error) {
+    return handleError(error, res);
+  }
+};
+
+
+exports.getCounts = async (req, res) => {
+  try {
+    // Fetch all products from the Product collection
+    const products = await productService.findAll();
+
+    let totalStock = 0;
+    let stockValue = 0;
+    let reorderCount = 0;
+    let outOfStockCount = 0;
+    if(products.length > 0){
+        products.forEach(product => {
+          totalStock += product.stock; // Sum up stock
+          stockValue += product.stock * product.price; // Calculate stock value
+          if (product.stock <= 0) {
+            outOfStockCount += 1; // Count out-of-stock products
+          }
+          if (product.stock <= 5) { // Reorder threshold; adjust as needed
+            reorderCount += 1;
+          }
+        });
+    }
+
+    const result = {
+      total_stocks: totalStock, // Total current stock
+      stock_value: stockValue, // Total value of stock
+      stock_cost: stockValue, // Assuming stock cost equals stock value
+      reorder_count: reorderCount, // Count of items needing reorder
+      out_of_stock_count: outOfStockCount, // Count of out-of-stock items
+    };
+    
+    return sendResponse(res, 200, true, "Stock counts retrieved successfully", result);
+
   } catch (error) {
     return handleError(error, res);
   }
