@@ -84,7 +84,7 @@ exports.login = async (req, res) => {
 
     var user1 = await userService.update({ _id: user._id }, { token,isTokenActive });
 
-    return sendResponse(res, 200, true, "Login Successfully", { user1 });
+    return sendResponse(res, 200, true, "Login Successfully",  user1 );
   } catch (error) {
     return handleError(error, res);
   }
