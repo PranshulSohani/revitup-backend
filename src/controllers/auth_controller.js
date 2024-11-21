@@ -82,9 +82,9 @@ exports.login = async (req, res) => {
     const token = jwt.sign(tokenData, process.env.TOKEN_SECRET);
     const isTokenActive  = true;
 
-    await userService.update({ _id: user._id }, { token,isTokenActive });
+    var user1 = await userService.update({ _id: user._id }, { token,isTokenActive });
 
-    return sendResponse(res, 200, true, "Login Successfully", { token });
+    return sendResponse(res, 200, true, "Login Successfully", { user1 });
   } catch (error) {
     return handleError(error, res);
   }
