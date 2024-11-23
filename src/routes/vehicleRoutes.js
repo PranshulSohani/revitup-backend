@@ -29,7 +29,7 @@ router.post("/exit-request", [auth, role([6])], vehicleController.makeExitReques
 router.post("/approve-exit-request/:requestId", [auth, role([1])], vehicleController.approveVehicleExisttRequest);
 
 // GET /vehicles/entered - Get all entered vehicles
-router.get("/entered", [auth, role([6])], vehicleController.getEnteredVehicles);
+router.get("/entered", [auth, role([1,6])], vehicleController.getEnteredVehicles);
 
 
 // GET /vehicles/waiting - Get all waiting vehicles
