@@ -14,7 +14,7 @@ router.get("/get-counts", [auth, role([8])], productController.getCounts);
 router.post("/create", [auth, role([8])], productController.create);            
 
 // GET /products - Get all products
-router.get("/", [auth, role([8])], productController.getAll);             
+router.get("/", [auth, role([7,8])], productController.getAll);             
 
 // GET /products/:productId - Get a specific product by ID
 router.get("/:productId", [auth, role([8])], productController.get);      
