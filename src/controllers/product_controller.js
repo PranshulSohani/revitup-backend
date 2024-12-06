@@ -170,3 +170,17 @@ exports.getCounts = async (req, res) => {
     return handleError(error, res);
   }
 };
+
+
+exports.getAllProducts = async (req, res) => {
+  try {
+    const products = await productService.findAll();
+    if (products.length > 0) {
+      return sendResponse(res, 200, true, "Data found",products);
+    } else {
+      return sendResponse(res, 200, true, "No Data found", products);
+    }
+  } catch (error) {
+    return handleError(error, res);
+  }
+};
