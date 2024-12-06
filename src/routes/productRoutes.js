@@ -9,15 +9,21 @@ const role = require('../middleware/role');
 
 router.get("/get-counts", [auth, role([8])], productController.getCounts);
 
+router.get("/get-all-products", [auth, role([7])], productController.getAllProducts); 
+
 
 // POST /products - Create a new product
 router.post("/create", [auth, role([8])], productController.create);            
 
 // GET /products - Get all products
-router.get("/", [auth, role([7,8])], productController.getAll);             
+router.get("/", [auth, role([8])], productController.getAll);
+
 
 // GET /products/:productId - Get a specific product by ID
-router.get("/:productId", [auth, role([8])], productController.get);      
+router.get("/:productId", [auth, role([8])], productController.get);   
+
+
+
 
 // PUT /products/:productId - Update a specific product by ID
 router.put("/:productId", [auth, role([8])], productController.update);   
