@@ -218,26 +218,24 @@ exports.getEmployeeAttendanceList = async (req, res) => {
     };
 
     const myAggregate = EmployeeAttendance.aggregate([
-      { $lookup: {
+      { 
+        $lookup: {
           from: "users",
           localField: "employee_id",
           foreignField: "_id",
           as: "employee_details",
-      }},
+        }
+      },
       { $unwind: "$employee_details" },
       { $match: matchConditions },
       {
-        $project: {
-          initials: 1,
-          check_in_date_time: 1,
-          check_out_date_time: 1,
-          employee_details: 1,
+        $addFields: {
+          attendance_date: { $dateToString: { format: "%Y-%m-%d", date: "$check_in_date_time" } },
         },
       },
-      { $sort: { check_in_date_time: -1 } },
       {
         $group: {
-          _id: { $dateToString: { format: "%Y-%m-%d", date: "$check_in_date_time" } },
+          _id: { employee_id: "$employee_id", date: "$attendance_date" },
           check_in_date_time: { $first: "$check_in_date_time" },
           check_out_date_time: { $first: "$check_out_date_time" },
           employee_details: { $first: "$employee_details" },
@@ -245,14 +243,18 @@ exports.getEmployeeAttendanceList = async (req, res) => {
       },
       {
         $project: {
-          _id: 0, // Remove _id from the final output
-          date: "$_id", // Rename _id to date
+          _id: 0,
+          employee_id: "$_id.employee_id",
+          date: "$_id.date",
           check_in_date_time: 1,
           check_out_date_time: 1,
           employee_details: 1,
         },
       },
+      { $sort: { check_in_date_time: -1 } },
     ]);
+    
+    
 
     await EmployeeAttendance.aggregatePaginate(myAggregate, options).then(result => {
       if (result.data.length > 0) {
@@ -262,7 +264,7 @@ exports.getEmployeeAttendanceList = async (req, res) => {
             return fullName.toLowerCase().includes(searchKey.toLowerCase());
           });
         }
-
+        console.log("len",result.data.length)
         result.data = result.data.map(attendance => ({
           ...attendance,
           name_initial: getNameInitials(attendance.employee_details.full_name, 'first_name'),
