@@ -192,7 +192,7 @@ exports.delete = async (req, res) => {
 exports.getEmployeeAttendanceList = async (req, res) => {
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 10;
-  const date = req.query.date ? new Date(req.query.date) : null;
+  const date = req.query.date ? new Date(req.query.date) : new Date(); // Default to today if date is not provided
   const searchKey = req.query.search_key || '';
 
   const myCustomLabels = {
@@ -209,26 +209,23 @@ exports.getEmployeeAttendanceList = async (req, res) => {
   const options = { page, limit, customLabels: myCustomLabels };
 
   try {
-    const matchConditions = date
-      ? {
-          createdAt: {
-            $gte: moment(date).startOf("day").toDate(),
-            $lt: moment(date).endOf("day").toDate()
-          }
-        }
-      : {};
+    const matchConditions = {
+      createdAt: {
+        $gte: moment(date).startOf("day").toDate(),
+        $lt: moment(date).endOf("day").toDate(),
+      },
+      "employee_details.role_id": { $nin: [9, 1] }, // Exclude role IDs 9 and 1
+    };
 
     const myAggregate = EmployeeAttendance.aggregate([
-      { $match: matchConditions },
-      {
-        $lookup: {
+      { $lookup: {
           from: "users",
           localField: "employee_id",
           foreignField: "_id",
           as: "employee_details",
-        },
-      },
+      }},
       { $unwind: "$employee_details" },
+      { $match: matchConditions },
       {
         $project: {
           initials: 1,
@@ -265,7 +262,6 @@ exports.getEmployeeAttendanceList = async (req, res) => {
             return fullName.toLowerCase().includes(searchKey.toLowerCase());
           });
         }
-        console.log("result.data",result.data);
 
         result.data = result.data.map(attendance => ({
           ...attendance,
@@ -288,6 +284,7 @@ exports.getEmployeeAttendanceList = async (req, res) => {
     res.status(500).send({ status: false, message: error.toString() || "Internal Server Error" });
   }
 };
+
 
 
 exports.getCounts = async (req, res) => {
