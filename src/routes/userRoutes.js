@@ -17,7 +17,7 @@ router.get("/attendance-list", [auth, role([9])], userController.getEmployeeAtte
 router.post("/create",[auth, role([1,9])], userController.create);   
 
 // Get list of users
-router.get("/", [auth, role([1,9])], userController.getAll);
+router.get("/", [auth, role([1,2,9])], userController.getAll);
 
 // GET /employees/:userId - Get user details by user ID
 router.get("/:userId", [auth, role([1,9])], userController.get);
