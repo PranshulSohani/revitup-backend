@@ -185,7 +185,7 @@ exports.getBayVehicles = async (req, res) => {
                   var status = (checkExistenceOfWorkerInBay.length > 0) ? "Working" : "Parking";
                   vehicleMlog.status = status;
 
-                  const result = await jobCardQuotation.aggregate([
+                  const result1 = await jobCardQuotation.aggregate([
                    
                     {
                         $lookup: {
@@ -194,6 +194,11 @@ exports.getBayVehicles = async (req, res) => {
                             foreignField: "_id", // Field in the product collection that matches product_id
                             as: "product_details" // Output array field name for the joined product data
                         }
+                    },
+                    { 
+                      $match: {
+                         job_card_id:  jobCardId
+                      }
                     },
                     {
                         $unwind: { 
@@ -207,9 +212,9 @@ exports.getBayVehicles = async (req, res) => {
                         }
                     }
                 ]);
-                vehicleMlog.request_parts = result;
+                vehicleMlog.request_parts = result1;
                 
-                console.log(result);
+                console.log('result1',result1);
                 
 
                   return {
